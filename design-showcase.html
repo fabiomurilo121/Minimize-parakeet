@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Redutor de Imagens — Design System & UI Mockups</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #fafafa;
+    --surface: #ffffff;
+    --line: #e9e9ee;
+    --line-soft: #f1f1f4;
+    --ink: #14171e;
+    --ink-2: #3a4256;
+    --muted: #7c7a8a;
+    --primary: #2563eb;
+    --primary-soft: #eff5ff;
+    --primary-strong: #1d4ed8;
+    --accent-cyan: #06b6d4;
+    --good: #10b981;
+    --warn: #f59e0b;
+    --bad: #ef4444;
+    --radius: 16px;
+    --radius-sm: 10px;
+    --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 16px -2px rgba(0,0,0,0.06);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Outfit', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .container { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+
+  /* ── Top Nav ── */
+  .topbar {
+    border-bottom: 1px solid var(--line);
+    background: rgba(255,255,255,0.85);
+    backdrop-filter: blur(12px);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .topbar-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    max-width: 1180px;
+    margin: 0 auto;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+  .brand-mark {
+    width: 28px; height: 28px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent-cyan) 100%);
+    border-radius: 8px;
+    display: grid; place-items: center;
+    color: white;
+  }
+  .nav-links { display: flex; gap: 28px; font-size: 14px; color: var(--ink-2); }
+  .nav-links a { color: inherit; text-decoration: none; }
+  .nav-links a:hover { color: var(--primary); }
+
+  /* ── Hero ── */
+  .hero { padding: 80px 0 64px; }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 12px;
+    background: var(--primary-soft);
+    color: var(--primary-strong);
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 20px;
+  }
+  .eyebrow .dot {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--primary);
+  }
+  h1 {
+    font-size: clamp(38px, 5vw, 56px);
+    font-weight: 600;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin: 0 0 20px;
+    max-width: 760px;
+  }
+  h1 .accent { color: var(--primary); }
+  .lede {
+    font-size: 18px;
+    color: var(--ink-2);
+    max-width: 640px;
+    margin: 0 0 40px;
+  }
+
+  /* ── Stats Strip ── */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .stat {
+    padding: 22px 24px;
+    border-right: 1px solid var(--line);
+  }
+  .stat:last-child { border-right: none; }
+  .stat-num {
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+  }
+  .stat-label {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* ── Section ── */
+  section { padding: 64px 0; }
+  .section-head { margin-bottom: 32px; }
+  .section-head .kicker {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--primary);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+  }
+  h2 {
+    font-size: 32px;
+    font-weight: 600;
+    line-height: 1.15;
+    letter-spacing: -0.015em;
+    margin: 0 0 12px;
+  }
+  .section-head p {
+    color: var(--ink-2);
+    font-size: 16px;
+    max-width: 640px;
+    margin: 0;
+  }
+
+  /* ── Screen Block ── */
+  .screen {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 32px;
+  }
+  .screen-head {
+    padding: 24px 28px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    background: linear-gradient(180deg, #fcfcfd 0%, #fafafa 100%);
+  }
+  .screen-num {
+    flex-shrink: 0;
+    width: 40px; height: 40px;
+    background: var(--primary-soft);
+    color: var(--primary-strong);
+    border-radius: 10px;
+    display: grid; place-items: center;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+  }
+  .screen-head h3 {
+    margin: 0 0 6px;
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .screen-head .tag {
+    display: inline-block;
+    padding: 2px 10px;
+    background: var(--line-soft);
+    border-radius: 6px;
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    margin-bottom: 4px;
+  }
+  .screen-head .desc {
+    color: var(--ink-2);
+    font-size: 14px;
+    margin: 0;
+  }
+  .screen-img-wrap {
+    background: #e9eaee;
+    background-image:
+      linear-gradient(45deg, #e2e4ea 25%, transparent 25%),
+      linear-gradient(-45deg, #e2e4ea 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #e2e4ea 75%),
+      linear-gradient(-45deg, transparent 75%, #e2e4ea 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+    padding: 32px;
+    display: grid;
+    place-items: center;
+  }
+  .screen-img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 10px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+    display: block;
+  }
+  .screen-features {
+    padding: 24px 28px;
+    background: var(--surface);
+    border-top: 1px solid var(--line);
+  }
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+  }
+  .feature {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .feature-icon {
+    flex-shrink: 0;
+    width: 28px; height: 28px;
+    border-radius: 7px;
+    background: var(--primary-soft);
+    color: var(--primary);
+    display: grid; place-items: center;
+  }
+  .feature-icon svg { width: 16px; height: 16px; }
+  .feature-text strong {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 2px;
+  }
+  .feature-text span {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  /* ── Flow Section ── */
+  .flow-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 40px;
+  }
+  .flow-steps {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+    align-items: stretch;
+  }
+  .flow-step {
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 18px;
+    position: relative;
+    text-align: left;
+  }
+  .flow-step .num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--primary);
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .flow-step .ttl {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+  .flow-step .dsc {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+  .flow-arrow {
+    position: absolute;
+    top: 50%;
+    right: -14px;
+    transform: translateY(-50%);
+    color: var(--line);
+    z-index: 1;
+  }
+
+  /* ── Specs grid ── */
+  .specs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .spec-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 20px;
+  }
+  .spec-card .label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    font-weight: 500;
+    margin-bottom: 6px;
+  }
+  .spec-card .value {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+  .spec-card .hint {
+    font-size: 13px;
+    color: var(--ink-2);
+  }
+
+  /* ── Defaults table ── */
+  .defaults {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .defaults-head {
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .defaults-head h4 { margin: 0; font-size: 16px; font-weight: 600; }
+  .defaults-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .defaults-table th, .defaults-table td {
+    text-align: left;
+    padding: 14px 24px;
+    font-size: 14px;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .defaults-table tr:last-child td { border-bottom: none; }
+  .defaults-table th {
+    background: #fafafa;
+    color: var(--muted);
+    font-weight: 500;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .defaults-table td:first-child { font-weight: 500; color: var(--ink); }
+  .defaults-table td:last-child {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--primary);
+  }
+
+  /* ── Footer ── */
+  footer {
+    border-top: 1px solid var(--line);
+    padding: 32px 0;
+    color: var(--muted);
+    font-size: 13px;
+    text-align: center;
+    margin-top: 40px;
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 900px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .stat:nth-child(2) { border-right: none; }
+    .stat:nth-child(1), .stat:nth-child(2) { border-bottom: 1px solid var(--line); }
+    .flow-steps { grid-template-columns: 1fr; }
+    .flow-arrow { display: none; }
+    .specs { grid-template-columns: 1fr; }
+    .nav-links { display: none; }
+    .hero { padding: 48px 0 40px; }
+    section { padding: 40px 0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+      </div>
+      Redutor de Imagens
+    </div>
+    <nav class="nav-links">
+      <a href="#overview">Overview</a>
+      <a href="#screens">Telas</a>
+      <a href="#flow">Fluxo</a>
+      <a href="#defaults">Defaults</a>
+    </nav>
+  </div>
+</div>
+
+<!-- HERO -->
+<div class="container">
+  <header class="hero">
+    <div class="eyebrow">
+      <span class="dot"></span>
+      Design Spec · Desktop App Windows
+    </div>
+    <h1>Redutor de Imagens — <span class="accent">resize rápido</span> direto do Explorer.</h1>
+    <p class="lede">App desktop para reduzir tamanho e dimensões de imagens em lote, com presets prontos, integração ao menu de contexto do Windows e fluxo de um clique a partir do Explorador de arquivos.</p>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-num">5</div>
+        <div class="stat-label">Telas no fluxo</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">7</div>
+        <div class="stat-label">Presets padrão</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">3</div>
+        <div class="stat-label">Formatos de saída</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">1440px</div>
+        <div class="stat-label">Layout desktop</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- OVERVIEW -->
+  <section id="overview">
+    <div class="section-head">
+      <div class="kicker">Overview</div>
+      <h2>O que o app faz</h2>
+      <p>Três caminhos para reduzir uma imagem — abrir e revisar na janela principal, acionar pelo menu de contexto do Explorer, ou arrastar pra um atalho. Em todos os casos o resultado é o mesmo: lote processado em background com presets reutilizáveis.</p>
+    </div>
+
+    <div class="specs">
+      <div class="spec-card">
+        <div class="label">Entrada</div>
+        <div class="value">Drag & drop + menu de contexto</div>
+        <div class="hint">Suporte a JPEG, PNG, WebP. Aceita múltiplas pastas.</div>
+      </div>
+      <div class="spec-card">
+        <div class="label">Saída</div>
+        <div class="value">Mesma pasta ou destino custom</div>
+        <div class="hint">Sobrescrever original (off por padrão) ou salvar cópias com sufixo.</div>
+      </div>
+      <div class="spec-card">
+        <div class="label">Processamento</div>
+        <div class="value">Lote multi-thread em background</div>
+        <div class="hint">Progresso por arquivo, log ao vivo, retomada ao minimizar.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SCREENS -->
+  <section id="screens">
+    <div class="section-head">
+      <div class="kicker">Telas</div>
+      <h2>As 5 telas do produto</h2>
+      <p>Da fila principal ao modal de contexto do Explorer, cada tela cumpre um papel específico no fluxo.</p>
+    </div>
+
+    <!-- 1. MAIN WINDOW -->
+    <div class="screen">
+      <div class="screen-head">
+        <div class="screen-num">01</div>
+        <div>
+          <span class="tag">screen-main-window</span>
+          <h3>Painel Principal — Fila de Processamento</h3>
+          <p class="desc">Tela que abre quando o app é executado. Lista as imagens carregadas, mostra status por arquivo e concentra todas as opções de resize no painel direito.</p>
+        </div>
+      </div>
+      <div class="screen-img-wrap">
+        <img class="screen-img" src="visily-main-window.jpg" alt="Main Window mockup" />
+      </div>
+      <div class="screen-features">
+        <div class="feature-grid">
+          <div class="feature">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            </div>
+            <div class="feature-text">
+              <strong>Lista reordenável</strong>
+              <span>Miniatura, nome, dimensões originais, tamanho e status por arquivo.</span>
+            </div>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            </div>
+            <div class="feature-text">
+              <strong>7 presets rápidos</strong>
+              <span>HD, SD, Tablet, Web, Thumbnail + reduções 50% e 75%.</span>
+            </div>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M15 9h.01"/><path d="M15 13h.01"/><path d="M15 17h.01"/></svg>
+            </div>
+            <div class="feature-text">
+              <strong>W×H personalizados</strong>
+              <span>Inputs travados juntos quando "manter proporção" está ativo.</span>
+            </div>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            </div>
+            <div class="feature-text">
+              <strong>Qualidade 10–100</strong>
+              <span>Slider visível em JPEG/WebP, com nota de equilíbrio em 85%.</span>
+            </div>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            </div>
+            <div class="feature-text">
+              <strong>Destino flexível</strong>
+              <span>Pasta atual, alterar para outra, ou sobrescrever original.</span>
+            </div>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            </div>
+            <div class="feature-text">
+              <strong>CTA Processar (N)</strong>
+              <span>Botão primário com contador de imagens selecionado em tempo real.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. QUICK ACTION MODAL -->
+    <div class="screen">
+      <div class="screen-head">
+        <div class="screen-num">02</div>
+        <div>
+          <span class="tag">screen-quick-action-modal</span>
+          <h3>Quick Action Modal — Atalho pelo Explorer</h3>
+          <p class="desc">Modal compacto que abre automaticamente quando o usuário seleciona arquivos no Explorer e clica em "Reduzir com Redutor de Imagens". Foco na ação imediata.</p>
+        </div>
+      </div>
+      <div class="screen-img-wrap">
+        <img class="screen-img" src="visily-quick-action-modal.jpg" alt="Quick Action Modal mockup" />
+      </div>
+      <div class="screen-features">
+        <div class="feature-grid">
+          <div class="feature">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
+            </div>
+            <div class="feature-text">
+              <strong>Resumo rápido</strong>
+              <span>"3 arquivos selecionados do Explorer" — contexto imediato.</span>
+            </div>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            </div>
+            <div class="feature-text">
+              <strong>Um clique</strong>
+              <span>"Reduzir agora" inicia o processamento e fecha o modal.</span>
+            </div>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 9V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4"/></svg>
+            </div>
+            <div class="feature-text">
+              <strong>Destino em 1 linha</strong>
+              <span>Toggle entre mesma pasta dos originais ou escolha manual.</span>
+            </div>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+            </div>
+            <div class="feature-text">
+              <strong>Ajustes Avançados</strong>
+              <span>Escape para abrir a Main Window com a fila pré-carregada.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. PRESET MANAGER -->
+    <div class="screen">
+      <div class="screen-head">
+        <div class="screen-num">03</div>
+        <div>
+          <span class="tag">screen-preset-manager</span>
+          <h3>Gerenciador de Presets</h3>
+          <p class="desc">Modal acessível via "Gerenciar Presets" no painel principal. CRUD de presets com modo pixels ou percentual, mais presets customizados (ex: Social Post, YouTube Thumbnail).</p>
+        </div>
+      </div>
+      <div class="screen-img-wrap">
+        <img class="screen-img" src="visily-preset-manager.jpg" alt="Preset Manager mockup" />
+      </div>
+      <div class="screen-features">
+        <div class="feature-grid">
+          <div class="feature">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+            </div>
+            <div class="feature-text">
+              <strong>Novo preset</strong>
+              <span>Formulário inline com nome, modo (pixels/percentual) e dimensões.</span>
+            </div>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg>
+            </div>
+            <div class="feature-text">
+              <strong>Editar / Remover</strong>
+              <span>Ações inline em cada preset listado na coleção.</span>
+            </div>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+            </div>
+            <div class="feature-text">
+              <strong>Restaurar padrões</strong>
+              <span>Repõe os 7 presets iniciais caso o usuário tenha modificado.</span>
+            </div>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+            </div>
+            <div class="feature-text">
+              <strong>Tags por uso</strong>
+              <span>"Fixo" / "Percentual" como chip pra identificar o tipo de cada preset.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. PROCESSING -->
+    <div class="screen">
+      <div class="screen-head">
+        <div class="screen-num">04</div>
+        <div>
+          <span class="tag">screen-processing-progress</span>
+          <h3>Processamento em Andamento</h3>
+          <p class="desc">Tela exibida enquanto o lote roda em background. Mostra progresso global, status por arquivo, economia estimada e log ao vivo — sem bloquear o usuário.</p>
+        </div>
+      </div>
+      <div class="screen-img-wrap">
+        <img class="screen-img" src="visily-processing-progress.jpg" alt="Processing Progress mockup" />
+      </div>
+      <div class="screen-features">
+        <div class="feature-grid">
+          <div class="feature">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <div class="feature-text">
+              <strong>Progresso global</strong>
+              <span>Barra + percentual grande, item em processamento destacado.</span>
+            </div>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 17 4-4 4 4 5-5"/></svg>
+            </div>
+            <div class="feature-text">
+              <strong>Métricas em tempo real</strong>
+              <span>Espaço economizado, velocidade (img/s), tempo restante e taxa de redução.</span>
+            </div>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </div>
+            <div class="feature-text">
+              <strong>Log ao vivo</strong>
+              <span>Console com timestamps para auditoria e debug de falhas.</span>
+            </div>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>
+            </div>
+            <div class="feature-text">
+              <strong>Conclusão clara</strong>
+              <span>Painel "Tarefa Finalizada" com atalhos para pasta e relatório.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. SETTINGS -->
+    <div class="screen">
+      <div class="screen-head">
+        <div class="screen-num">05</div>
+        <div>
+          <span class="tag">screen-settings</span>
+          <h3>Configurações</h3>
+          <p class="desc">Tela para integrações com o sistema operacional, comportamento pós-processamento e performance. Acessível via ícone de engrenagem no topo.</p>
+        </div>
+      </div>
+      <div class="screen-img-wrap">
+        <img class="screen-img" src="visily-settings.jpg" alt="Settings mockup" />
+      </div>
+      <div class="screen-features">
+        <div class="feature-grid">
+          <div class="feature">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+            </div>
+            <div class="feature-text">
+              <strong>Integração com Windows</strong>
+              <span>Toggle do menu de contexto + atalho de arrastar no desktop.</span>
+            </div>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            </div>
+            <div class="feature-text">
+              <strong>Performance</strong>
+              <span>Threads de processamento ajustáveis com valor sugerido (Auto detect).</span>
+            </div>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div class="feature-text">
+              <strong>Pós-processamento</strong>
+              <span>Ação automática: abrir pasta, mostrar notificação ou nada.</span>
+            </div>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            </div>
+            <div class="feature-text">
+              <strong>Atualizações</strong>
+              <span>Toggle de busca automática + "Verificar Agora" + versão corrente.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FLOW -->
+  <section id="flow">
+    <div class="section-head">
+      <div class="kicker">Jornada do usuário</div>
+      <h2>Como as telas se conectam</h2>
+      <p>O fluxo principal tem dois caminhos que convergem para a tela de processamento.</p>
+    </div>
+
+    <div class="flow-card">
+      <div class="flow-steps">
+        <div class="flow-step">
+          <div class="num">PASSO 1</div>
+          <div class="ttl">Origem</div>
+          <div class="dsc">Usuário abre o app, arrasta arquivos, ou usa o menu de contexto do Explorer.</div>
+          <svg class="flow-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <div class="flow-step">
+          <div class="num">PASSO 2</div>
+          <div class="ttl">Seleção</div>
+          <div class="dsc">Modal rápido OU janela principal. Escolhe preset, formato e qualidade.</div>
+          <svg class="flow-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <div class="flow-step">
+          <div class="num">PASSO 3</div>
+          <div class="ttl">Processar</div>
+          <div class="dsc">Botão "Processar" / "Reduzir agora" inicia a fila em background.</div>
+          <svg class="flow-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <div class="flow-step">
+          <div class="num">PASSO 4</div>
+          <div class="ttl">Progresso</div>
+          <div class="dsc">Tela de progresso com log, métricas e status por arquivo.</div>
+          <svg class="flow-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <div class="flow-step">
+          <div class="num">PASSO 5</div>
+          <div class="ttl">Conclusão</div>
+          <div class="dsc">Resumo, atalho "Abrir pasta de saída" e relatório detalhado.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DEFAULTS -->
+  <section id="defaults">
+    <div class="section-head">
+      <div class="kicker">Defaults</div>
+      <h2>Comportamentos padrão</h2>
+      <p>Estado inicial de cada controle — sem precisar configurar nada, o app funciona.</p>
+    </div>
+
+    <div class="defaults">
+      <div class="defaults-head">
+        <h4>Tabela de defaults</h4>
+        <span style="font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace;">preset-policy.json</span>
+      </div>
+      <table class="defaults-table">
+        <thead>
+          <tr>
+            <th>Controle</th>
+            <th>Comportamento padrão</th>
+            <th>Notas</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Manter proporção</td>
+            <td>Ativado</td>
+            <td>true</td>
+          </tr>
+          <tr>
+            <td>Formato de saída</td>
+            <td>JPEG</td>
+            <td>jpeg</td>
+          </tr>
+          <tr>
+            <td>Qualidade da compressão</td>
+            <td>85</td>
+            <td>slider 10–100</td>
+          </tr>
+          <tr>
+            <td>Sobrescrever original</td>
+            <td>Desligado</td>
+            <td>false</td>
+          </tr>
+          <tr>
+            <td>Salvar cópias renomeadas</td>
+            <td>Ativado</td>
+            <td>sufixo _resized</td>
+          </tr>
+          <tr>
+            <td>Pasta de saída</td>
+            <td>Mesma pasta dos originais</td>
+            <td>alternável</td>
+          </tr>
+          <tr>
+            <td>Threads de processamento</td>
+            <td>Auto detect</td>
+            <td>ajustável em Configurações</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<footer>
+  Redutor de Imagens · Design Spec · Mockups gerados no Visily
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,36 @@
+node_modules/
+dist/
+out/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+*.exe
+*.dmg
+*.AppImage
+*.snap
+*.deb
+*.rpm
+
+# Generated icons (criados via electron-builder icon)
+build/icon.ico
+build/icon.png
+
+# Cache
+.cache/
+.tmp/

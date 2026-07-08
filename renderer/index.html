@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redutor de Imagens</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="quick-mode-hidden">
+
+  <!-- ═══════════════ MAIN APP ═══════════════ -->
+  <div id="main-app" class="app-shell">
+
+    <!-- Top bar -->
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 3v18h18"/>
+            <path d="m19 9-5 5-4-4-3 3"/>
+          </svg>
+        </div>
+        <span class="brand-name">Redutor de Imagens</span>
+      </div>
+
+      <div class="topbar-actions">
+        <button class="btn btn-ghost" id="btnOpenFiles">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          Abrir arquivos
+        </button>
+        <button class="btn btn-icon" id="btnSettings" title="Configurações">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+        <button class="btn btn-icon" id="btnHelp" title="Ajuda">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Conteúdo principal -->
+    <main class="main-content">
+
+      <!-- Coluna esquerda — Lista -->
+      <section class="queue-pane">
+        <div class="pane-header">
+          <div>
+            <h2 class="pane-title">Fila de Processamento</h2>
+            <p class="pane-subtitle">Gerencie as imagens que serão redimensionadas.</p>
+          </div>
+          <button class="btn btn-ghost btn-sm" id="btnClearList">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+            Limpar Lista
+          </button>
+        </div>
+
+        <!-- Empty state -->
+        <div id="emptyState" class="empty-state">
+          <div class="empty-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          </div>
+          <h3>Solte imagens aqui</h3>
+          <p>ou clique em <strong>Abrir arquivos</strong> acima</p>
+        </div>
+
+        <!-- Tabela -->
+        <div id="queueTableWrap" class="queue-table-wrap hidden">
+          <div class="queue-table-head">
+            <div></div>
+            <div>Nome do Arquivo</div>
+            <div>Dimensões</div>
+            <div>Tamanho</div>
+            <div>Status</div>
+            <div></div>
+          </div>
+          <div id="queueList" class="queue-list"></div>
+        </div>
+      </section>
+
+      <!-- Coluna direita — Opções -->
+      <aside class="options-pane">
+
+        <!-- Presets -->
+        <div class="option-block">
+          <h3 class="option-title">Presets Rápidos</h3>
+          <div class="preset-grid" id="presetGrid"></div>
+          <button class="link-btn" id="btnManagePresets">Gerenciar Presets...</button>
+        </div>
+
+        <!-- Dimensões -->
+        <div class="option-block">
+          <h3 class="option-title">Dimensões Personalizadas</h3>
+
+          <div class="dim-inputs">
+            <div class="input-group">
+              <label class="input-label">LARGURA (PX)</label>
+              <input type="number" class="input" id="inputWidth" value="1920" min="1" max="20000">
+            </div>
+            <div class="dim-lock" id="dimLock" title="Manter proporção travado">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </div>
+            <div class="input-group">
+              <label class="input-label">ALTURA (PX)</label>
+              <input type="number" class="input" id="inputHeight" value="1080" min="1" max="20000">
+            </div>
+          </div>
+
+          <label class="checkbox-row">
+            <input type="checkbox" id="checkKeepRatio" checked>
+            <span class="checkbox-box"></span>
+            Manter proporção original
+          </label>
+
+          <label class="checkbox-row">
+            <input type="checkbox" id="checkUpscale">
+            <span class="checkbox-box"></span>
+            Permitir ampliação
+          </label>
+        </div>
+
+        <!-- Formato / Qualidade -->
+        <div class="option-block">
+          <div class="option-head-row">
+            <h3 class="option-title">Qualidade e Formato</h3>
+            <span class="hint" id="formatHint">Recomendado: WebP</span>
+          </div>
+
+          <label class="input-label">FORMATO DE SAÍDA</label>
+          <div class="select-wrap">
+            <select class="input" id="selectFormat">
+              <option value="jpeg">JPEG (Joint Photographic Experts Group)</option>
+              <option value="png">PNG (Portable Network Graphics)</option>
+              <option value="webp">WebP (Google)</option>
+            </select>
+            <svg class="select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+
+          <div class="slider-row">
+            <label class="input-label">QUALIDADE DA COMPRESSÃO</label>
+            <span class="slider-value" id="qualityValue">85%</span>
+          </div>
+          <input type="range" class="slider" id="sliderQuality" min="10" max="100" value="85">
+          <p class="option-hint">Valores mais baixos resultam em arquivos menores, mas com menor fidelidade visual. 85% é o equilíbrio ideal.</p>
+        </div>
+
+        <!-- Destino -->
+        <div class="option-block">
+          <h3 class="option-title">Destino de Saída</h3>
+
+          <div class="folder-row">
+            <div class="folder-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            </div>
+            <div class="folder-info">
+              <div class="folder-name" id="outputFolderName">Pasta Atual</div>
+              <div class="folder-path" id="outputFolderPath">Mesma pasta dos arquivos originais</div>
+            </div>
+            <button class="btn btn-ghost btn-sm" id="btnChangeFolder">Alterar</button>
+          </div>
+
+          <label class="checkbox-row">
+            <input type="checkbox" id="checkOverwrite">
+            <span class="checkbox-box"></span>
+            <div>
+              <div class="checkbox-title">Sobrescrever arquivos originais</div>
+              <div class="checkbox-hint">Ação irreversível nos arquivos de origem.</div>
+            </div>
+          </label>
+
+          <label class="checkbox-row">
+            <input type="checkbox" id="checkRenameCopies" checked>
+            <span class="checkbox-box"></span>
+            <div>
+              <div class="checkbox-title">Salvar cópias renomeadas</div>
+              <div class="checkbox-hint" id="renameHint">Ex: ferias_verao_resized.jpg</div>
+            </div>
+          </label>
+
+          <div class="naming-row">
+            <label class="input-label">PADRÃO DE NOME</label>
+            <div class="select-wrap">
+              <select class="input" id="selectNaming">
+                <option value="resized">Sufixo _resized</option>
+                <option value="dimension">Sufixo _WxH (ex: _1920x1080)</option>
+                <option value="keep">Manter nome original</option>
+              </select>
+              <svg class="select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- CTA -->
+        <button class="btn btn-primary btn-process" id="btnProcess">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+          <span id="processBtnLabel">Processar 0 imagens</span>
+        </button>
+
+        <button class="link-btn" id="btnAdvanced">Preferências Avançadas...</button>
+      </aside>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="footer-left">
+        <span id="footerCount">0 imagens selecionadas</span>
+        <span class="dot-sep"></span>
+        <span id="footerSize">0 KB</span>
+        <span class="dot-sep"></span>
+        <span class="status-pill" id="statusPill">
+          <span class="status-dot status-dot-idle"></span>
+          Aguardando
+        </span>
+      </div>
+      <div class="footer-right">
+        <button class="link-btn" id="btnOpenOutput">Abrir pasta de saída</button>
+        <span class="version">v1.0.0</span>
+      </div>
+    </footer>
+
+    <!-- Processing overlay -->
+    <div id="processingOverlay" class="processing-overlay hidden">
+      <div class="processing-card">
+        <div class="processing-header">
+          <div>
+            <h2>Reduzindo suas imagens...</h2>
+            <p id="processingSubtitle">Processando item 1 de 1</p>
+          </div>
+          <div class="processing-percent" id="processingPercent">0%</div>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+        <div class="metrics-grid">
+          <div class="metric">
+            <div class="metric-icon green"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v3"/><path d="M21 16v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3"/><line x1="4" y1="12" x2="20" y2="12"/></svg></div>
+            <div class="metric-label">ESPAÇO ECONOMIZADO</div>
+            <div class="metric-value" id="metricSaved">0 KB</div>
+          </div>
+          <div class="metric">
+            <div class="metric-icon yellow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+            <div class="metric-label">VELOCIDADE</div>
+            <div class="metric-value" id="metricSpeed">— img/s</div>
+          </div>
+          <div class="metric">
+            <div class="metric-icon blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+            <div class="metric-label">TEMPO RESTANTE</div>
+            <div class="metric-value" id="metricRemaining">—</div>
+          </div>
+          <div class="metric">
+            <div class="metric-icon purple"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg></div>
+            <div class="metric-label">TAXA DE REDUÇÃO</div>
+            <div class="metric-value" id="metricRate">—</div>
+          </div>
+        </div>
+
+        <div class="processing-actions">
+          <button class="btn btn-ghost" id="btnCancelProcess">Cancelar</button>
+          <button class="btn btn-primary" id="btnRunInBg" disabled>Manter em segundo plano</button>
+        </div>
+
+        <p class="processing-hint">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          Dica: O processamento continuará em segundo plano se você minimizar esta janela.
+        </p>
+      </div>
+    </div>
+
+    <!-- Modal: Gerenciador de Presets -->
+    <div id="presetModal" class="modal-overlay hidden">
+      <div class="modal modal-md">
+        <div class="modal-header">
+          <div>
+            <h2>Gerenciador de Presets</h2>
+            <p>Configure regras personalizadas de redimensionamento para fluxos de trabalho ágeis.</p>
+          </div>
+          <button class="modal-close" data-close-modal>×</button>
+        </div>
+        <div class="modal-body">
+          <div class="preset-form">
+            <h4 id="presetFormTitle">Novo Preset Customizado</h4>
+            <div class="input-group full">
+              <label class="input-label">NOME DO PRESET</label>
+              <input type="text" class="input" id="presetName" placeholder="Ex: Miniatura Blog">
+            </div>
+            <div class="form-row">
+              <div class="input-group">
+                <label class="input-label">MODO DE REDIMENSIONAMENTO</label>
+                <div class="select-wrap">
+                  <select class="input" id="presetMode">
+                    <option value="pixels">Pixels (Fixo)</option>
+                    <option value="percent">Percentual</option>
+                  </select>
+                  <svg class="select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+              </div>
+              <div class="input-group" id="presetPixelsGroup">
+                <label class="input-label">DIMENSÕES (L×A)</label>
+                <div class="dim-inputs">
+                  <input type="number" class="input" id="presetW" placeholder="1280" min="1">
+                  <span>×</span>
+                  <input type="number" class="input" id="presetH" placeholder="720" min="1">
+                </div>
+              </div>
+              <div class="input-group hidden" id="presetPercentGroup">
+                <label class="input-label">PERCENTUAL</label>
+                <div class="slider-row">
+                  <input type="range" class="slider" id="presetPercent" min="10" max="200" value="50">
+                  <span class="slider-value" id="presetPercentValue">50%</span>
+                </div>
+              </div>
+            </div>
+            <label class="checkbox-row">
+              <input type="checkbox" id="presetKeepRatio" checked>
+              <span class="checkbox-box"></span>
+              Manter proporção original da imagem
+            </label>
+            <div class="form-actions">
+              <button class="btn btn-ghost" id="btnPresetCancel">Cancelar</button>
+              <button class="btn btn-primary" id="btnPresetSave">Salvar Preset</button>
+            </div>
+          </div>
+
+          <div class="preset-list-wrap">
+            <div class="preset-list-head">
+              <h4>Presets Configurados</h4>
+              <span id="presetCount" class="muted">0 itens</span>
+            </div>
+            <div class="preset-list" id="presetList"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="link-btn" id="btnRestorePresets">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+            Restaurar Padrões
+          </button>
+          <div class="spacer"></div>
+          <button class="btn btn-ghost" data-close-modal>Cancelar</button>
+          <button class="btn btn-primary" id="btnPresetDone">Concluir</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast container -->
+    <div id="toastContainer" class="toast-container"></div>
+  </div>
+
+  <!-- ═══════════════ QUICK ACTION MODAL ═══════════════ -->
+  <div id="quick-action-app" class="quick-action-shell">
+    <div class="quick-modal">
+      <div class="quick-header">
+        <div class="quick-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        </div>
+        <div>
+          <h2>Reduzir Imagens</h2>
+          <p id="quickSubtitle">0 arquivos selecionados do Explorer</p>
+        </div>
+        <button class="modal-close" id="quickClose">×</button>
+      </div>
+
+      <div class="quick-body">
+        <div class="quick-presets-head">
+          <h4>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v18H3z"/><path d="M21 9H3"/><path d="M9 21V9"/></svg>
+            Presets Rápidos
+          </h4>
+          <button class="link-btn link-btn-sm" id="quickManagePresets">Gerenciar</button>
+        </div>
+        <div class="quick-preset-grid" id="quickPresetGrid"></div>
+
+        <label class="checkbox-row">
+          <input type="checkbox" id="quickKeepRatio" checked>
+          <span class="checkbox-box"></span>
+          Manter proporção original
+        </label>
+
+        <div class="quick-format-quality">
+          <div class="quick-fq-item">
+            <label class="input-label">FORMATO DE SAÍDA</label>
+            <div class="select-wrap">
+              <select class="input" id="quickFormat">
+                <option value="jpeg">JPEG (Recomendado)</option>
+                <option value="png">PNG</option>
+                <option value="webp">WebP</option>
+              </select>
+              <svg class="select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+          </div>
+          <div class="quick-fq-item">
+            <div class="slider-row">
+              <label class="input-label">QUALIDADE</label>
+              <span class="slider-value" id="quickQualityValue">85%</span>
+            </div>
+            <input type="range" class="slider" id="quickQuality" min="10" max="100" value="85">
+          </div>
+        </div>
+
+        <div class="quick-destination">
+          <h4>Destino dos Arquivos</h4>
+
+          <label class="quick-radio">
+            <input type="radio" name="quickDest" value="same" checked>
+            <span class="radio-box"></span>
+            <div class="folder-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            </div>
+            <div class="quick-radio-text">
+              <div class="checkbox-title">Mesma pasta dos originais</div>
+              <div class="checkbox-hint" id="quickSamePath">—</div>
+            </div>
+          </label>
+
+          <label class="quick-radio">
+            <input type="radio" name="quickDest" value="custom">
+            <span class="radio-box"></span>
+            <div class="folder-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            </div>
+            <div class="quick-radio-text">
+              <div class="checkbox-title">Escolher pasta de destino</div>
+              <div class="checkbox-hint" id="quickCustomPath">Selecionar manualmente...</div>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <div class="quick-footer">
+        <button class="btn btn-ghost" id="quickCancel">Cancelar</button>
+        <button class="btn btn-ghost" id="quickAdvanced">Ajustes Avançados</button>
+        <button class="btn btn-primary" id="quickSubmit">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Reduzir agora
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
