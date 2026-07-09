@@ -36,30 +36,30 @@
           <span class="visually-hidden">Parakeet Minimizer</span>
         </a>
         <a href="#/" class="back-link hidden" id="backLink">
-          <span id="icoArrowLeft"></span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
           Voltar ao Início
         </a>
       </div>
       <div class="topbar-right">
         <button class="btn btn-secondary" id="openFilesBtn">
-          <span id="icoFolderOpen"></span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
           Abrir Arquivos
         </button>
         <label class="theme-switch" id="themeSwitch" title="Alternar tema claro/escuro">
           <input type="checkbox" id="themeSwitchInput" />
           <span class="theme-switch-track">
             <span class="theme-switch-icons">
-              <span class="theme-icon theme-icon-sun" id="icoSun"></span>
-              <span class="theme-icon theme-icon-moon" id="icoMoon"></span>
+              <span class="theme-icon theme-icon-sun"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="6.34" y2="6.34"/><line x1="17.66" y1="17.66" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="6.34" y2="17.66"/><line x1="17.66" y1="6.34" x2="19.07" y2="4.93"/></svg></span>
+              <span class="theme-icon theme-icon-moon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
             </span>
             <span class="theme-switch-thumb"></span>
           </span>
         </label>
         <button class="btn-icon" id="settingsBtn" title="Configurações">
-          <span id="icoSettings"></span>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         </button>
         <button class="btn-icon" id="helpBtn" title="Ajuda">
-          <span id="icoHelp"></span>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
         </button>
       </div>
     </header>
@@ -152,10 +152,10 @@
 
             <div class="field" style="margin-top: var(--sp-3);">
               <label class="field-label" for="fitModeSelect">Modo de Ajuste</label>
-              <select class="select" id="fitModeSelect">
-                <option value="cover" selected>Preencher com recorte inteligente</option>
-                <option value="inside">Preservar todo o conteúdo</option>
-                <option value="fill">Esticar (pode distorcer)</option>
+              <select class="select select-with-icon" id="fitModeSelect">
+                <option value="cover" selected>✂️  Preencher com recorte inteligente</option>
+                <option value="inside">🖼️  Preservar todo o conteúdo</option>
+                <option value="fill">↔️  Esticar (pode distorcer)</option>
               </select>
               <p class="field-hint" id="fitModeHint">
                 <span id="icoInfoSm"></span>
@@ -172,11 +172,11 @@
                 <label class="field-label" for="formatSelect">Formato de Saída</label>
                 <span class="quality-hint" id="formatRecommended">Recomendado: WebP</span>
               </div>
-              <select class="select" id="formatSelect">
-                <option value="jpeg">JPEG (Joint Photographic Experts Group)</option>
-                <option value="png">PNG (Portable Network Graphics)</option>
-                <option value="webp">WebP (Recomendado)</option>
-                <option value="jpg">JPG</option>
+              <select class="select select-with-icon" id="formatSelect">
+                <option value="jpeg">📷  JPEG (Joint Photographic Experts Group)</option>
+                <option value="png">🖼️  PNG (Portable Network Graphics)</option>
+                <option value="webp">✨  WebP (Recomendado)</option>
+                <option value="jpg">📸  JPG</option>
               </select>
             </div>
 
@@ -214,6 +214,7 @@
             <div class="option-list" style="margin-top: var(--sp-2);">
               <label class="option-row">
                 <input type="checkbox" id="overwriteOriginal" />
+                <span class="option-icon option-icon-warn" id="optIconWarn"></span>
                 <div class="option-body">
                   <div class="option-title">Sobrescrever arquivos originais</div>
                   <div class="option-desc">Ação irreversível nos arquivos de origem.</div>
@@ -222,6 +223,7 @@
 
               <label class="option-row">
                 <input type="checkbox" id="saveRenamed" checked />
+                <span class="option-icon option-icon-info" id="optIconCopy"></span>
                 <div class="option-body">
                   <div class="option-title">Salvar cópias renomeadas</div>
                   <div class="option-desc">Ex: ferias_verao_resized.jpg</div>
@@ -358,7 +360,7 @@
     <section class="view" id="view-settings">
       <main class="settings-container">
         <header class="settings-header">
-          <div class="ico-box"><span id="icoSettingsBig"></span></div>
+          <div class="ico-box"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
           <div>
             <h1>Configurações</h1>
             <p>Personalize como o Parakeet Minimizer se integra ao seu sistema e processa seus arquivos.</p>
@@ -367,12 +369,19 @@
 
         <!-- Instalação & Integração -->
         <section class="settings-section">
-          <h2>Instalação &amp; Integração</h2>
-          <p class="subtitle">Configure a presença do aplicativo no Windows para acesso rápido.</p>
+          <div class="section-head">
+            <span class="section-head-icon section-head-icon-primary">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            </span>
+            <div>
+              <h2>Instalação &amp; Integração</h2>
+              <p class="subtitle">Configure a presença do aplicativo no Windows para acesso rápido.</p>
+            </div>
+          </div>
 
           <div class="settings-card">
             <div class="card-row">
-              <div class="card-row-icon"><span id="icoGrid"></span></div>
+              <div class="card-row-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></div>
               <div class="card-row-body">
                 <div class="card-row-title">Menu de Contexto do Windows</div>
                 <div class="card-row-description">
@@ -385,7 +394,7 @@
             </div>
 
             <div class="card-row">
-              <div class="card-row-icon"><span id="icoMonitor"></span></div>
+              <div class="card-row-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
               <div class="card-row-body">
                 <div class="card-row-title">Criar Atalho no Desktop</div>
                 <div class="card-row-description">
@@ -398,7 +407,7 @@
             </div>
 
             <div class="card-row">
-              <div class="card-row-icon"><span id="icoShield"></span></div>
+              <div class="card-row-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
               <div class="card-row-body">
                 <div class="card-row-title">Executar como Administrador</div>
                 <div class="card-row-description">
@@ -414,12 +423,19 @@
 
         <!-- Processamento & Performance -->
         <section class="settings-section">
-          <h2>Processamento &amp; Performance</h2>
-          <p class="subtitle">Ajuste o comportamento do motor de compressão para sua máquina.</p>
+          <div class="section-head">
+            <span class="section-head-icon section-head-icon-success">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="2" x2="9" y2="4"/><line x1="15" y1="2" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="22"/><line x1="15" y1="20" x2="15" y2="22"/><line x1="20" y1="9" x2="22" y2="9"/><line x1="20" y1="15" x2="22" y2="15"/><line x1="2" y1="9" x2="4" y2="9"/><line x1="2" y1="15" x2="4" y2="15"/></svg>
+            </span>
+            <div>
+              <h2>Processamento &amp; Performance</h2>
+              <p class="subtitle">Ajuste o comportamento do motor de compressão para sua máquina.</p>
+            </div>
+          </div>
 
           <div class="settings-card">
             <div class="thread-row">
-              <div class="ico-box"><span id="icoZap"></span></div>
+              <div class="ico-box"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
               <div class="body">
                 <div class="title">Threads de Processamento</div>
                 <div class="desc">Número de núcleos do processador usados simultaneamente. Valores altos aceleram o processo mas podem travar o PC.</div>
@@ -432,17 +448,17 @@
 
             <div class="after-action-row">
               <div class="ico-box" style="background: var(--success-light); color: var(--success);">
-                <span id="icoExternalLink"></span>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
               </div>
               <div class="body">
                 <div class="title">Ação após finalizar</div>
                 <div class="desc">O que o aplicativo deve fazer automaticamente após completar uma fila de processamento.</div>
               </div>
-              <select class="select" id="afterActionSelect" style="width: 200px;">
-                <option value="open-output">Abrir pasta de saída</option>
-                <option value="notify">Apenas notificar</option>
-                <option value="shutdown">Desligar o PC</option>
-                <option value="none">Nada</option>
+              <select class="select select-with-icon" id="afterActionSelect" style="width: 200px;">
+                <option value="open-output">📂  Abrir pasta de saída</option>
+                <option value="notify">🔔  Apenas notificar</option>
+                <option value="shutdown">⏻  Desligar o PC</option>
+                <option value="none">🚫  Nada</option>
               </select>
             </div>
           </div>
@@ -450,12 +466,19 @@
 
         <!-- Sistema -->
         <section class="settings-section">
-          <h2>Sistema</h2>
-          <p class="subtitle">Informações do software instalado.</p>
+          <div class="section-head">
+            <span class="section-head-icon section-head-icon-info">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+            </span>
+            <div>
+              <h2>Sistema</h2>
+              <p class="subtitle">Informações do software instalado.</p>
+            </div>
+          </div>
 
           <div class="settings-card">
             <div class="card-row">
-              <div class="card-row-icon"><span id="icoInfo"></span></div>
+              <div class="card-row-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></div>
               <div class="card-row-body">
                 <div class="label">VERSÃO ATUAL</div>
                 <div class="value">Parakeet Minimizer v1.0.1 (Build 20231024)</div>
@@ -468,12 +491,12 @@
         <footer class="settings-footer">
           <div class="legal">
             <p>Desenvolvido para máxima eficiência.</p>
-            <a href="#">Política de Privacidade</a>
+            <a href="#" id="openPrivacyBtn">Política de Privacidade</a>
           </div>
           <div class="actions">
             <button class="btn btn-secondary" id="discardBtn">Descartar</button>
             <button class="btn btn-primary" id="saveBtn">
-              <span id="icoSave"></span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
               Salvar Alterações
             </button>
           </div>
@@ -497,6 +520,99 @@
         <span id="statusbarVersion">v1.0.1</span>
       </div>
     </footer>
+  </div>
+
+  <!-- ============================================
+       POLÍTICA DE PRIVACIDADE MODAL
+       ============================================ -->
+  <div class="modal-backdrop hidden" id="privacyModal">
+    <div class="modal modal-lg" role="dialog" aria-labelledby="privacyTitle">
+      <div class="modal-header">
+        <div class="modal-header-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div class="modal-header-text">
+          <h2 id="privacyTitle">Política de Privacidade</h2>
+          <p>Como o Parakeet Minimizer trata seus dados e sua privacidade.</p>
+        </div>
+        <button class="modal-close" data-close="privacy">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="privacy-section">
+          <h3>
+            <span class="privacy-icon privacy-icon-success">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </span>
+            Processamento 100% local
+          </h3>
+          <p>Todas as imagens são processadas <strong>no seu próprio computador</strong> usando a biblioteca <code>sharp</code> (libvips). Nenhum arquivo sai da sua máquina. Nenhum dado é enviado para servidores externos.</p>
+        </div>
+
+        <div class="privacy-section">
+          <h3>
+            <span class="privacy-icon privacy-icon-success">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </span>
+            Sem telemetria
+          </h3>
+          <p>O Parakeet Minimizer <strong>não coleta, armazena ou transmite</strong> informações sobre seu uso, suas imagens, suas preferências ou qualquer outro dado pessoal.</p>
+        </div>
+
+        <div class="privacy-section">
+          <h3>
+            <span class="privacy-icon privacy-icon-success">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </span>
+            Sem conta ou login
+          </h3>
+          <p>Não é necessário criar conta, fazer login ou fornecer e-mail. O app funciona imediatamente após a instalação, sem coleta de identidade.</p>
+        </div>
+
+        <div class="privacy-section">
+          <h3>
+            <span class="privacy-icon privacy-icon-info">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            </span>
+            Dados armazenados localmente
+          </h3>
+          <p>Apenas suas preferências (tema, presets customizados, configs) são salvas em <code>%APPDATA%/Parakeet Minimizer/</code>. Você pode apagar tudo a qualquer momento.</p>
+        </div>
+
+        <div class="privacy-section">
+          <h3>
+            <span class="privacy-icon privacy-icon-info">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            </span>
+            Integração opcional com o Windows
+          </h3>
+          <p>Se você ativar o menu de contexto do Windows, o app registra um verb no registro (HKCU) — operação local, sem comunicação externa. Você pode desativar a qualquer momento.</p>
+        </div>
+
+        <div class="privacy-section">
+          <h3>
+            <span class="privacy-icon privacy-icon-info">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            </span>
+            Código aberto
+          </h3>
+          <p>Este é um software de código aberto. Você pode auditar o código-fonte, contribuir, ou compilar sua própria versão a qualquer momento.</p>
+        </div>
+
+        <div class="privacy-summary">
+          <strong>Em resumo:</strong> suas imagens ficam no seu PC, suas configurações ficam no seu PC, e ninguém (nem nós) tem acesso a elas.
+        </div>
+
+        <p class="privacy-footer-note">
+          <small>Última atualização: janeiro de 2025 · Parakeet Minimizer v1.0.1</small>
+        </p>
+      </div>
+      <div class="modal-footer">
+        <div class="spacer"></div>
+        <button class="btn btn-primary" data-close="privacy">Entendi</button>
+      </div>
+    </div>
   </div>
 
   <!-- ============================================
@@ -538,11 +654,11 @@
           <div class="quality-row">
             <div class="field">
               <label class="field-label">Formato de Saída</label>
-              <select class="select" id="qaFormat">
-                <option value="jpeg" selected>JPEG (Recomendado)</option>
-                <option value="png">PNG</option>
-                <option value="webp">WebP</option>
-                <option value="jpg">JPG</option>
+              <select class="select select-with-icon" id="qaFormat">
+                <option value="jpeg" selected>📷  JPEG (Recomendado)</option>
+                <option value="png">🖼️  PNG</option>
+                <option value="webp">✨  WebP</option>
+                <option value="jpg">📸  JPG</option>
               </select>
             </div>
             <div class="field">

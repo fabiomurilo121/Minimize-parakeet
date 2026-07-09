@@ -1142,6 +1142,28 @@ a:hover { text-decoration: underline; }
   margin-top: 2px;
 }
 
+.option-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-md);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.option-icon-warn {
+  background: var(--warning-light);
+  color: var(--warning);
+}
+.option-icon-info {
+  background: var(--info-light);
+  color: var(--info);
+}
+
+/* Select com icone (usado para selects com opcoes que tem emoji/SVG) */
+.select-with-icon {
+  padding-left: 12px;
+}
+
 /* ========================================
    Processing screen
    ======================================== */
@@ -1437,6 +1459,80 @@ a:hover { text-decoration: underline; }
    Quick Action Modal
    ======================================== */
 
+/* ========================================
+   Modal: Politica de Privacidade
+   ======================================== */
+.privacy-section {
+  padding: var(--sp-4) 0;
+  border-bottom: 1px solid var(--border);
+}
+.privacy-section:first-child { padding-top: 0; }
+.privacy-section:last-of-type { border-bottom: none; }
+.privacy-section h3 {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: 0 0 var(--sp-2) 0;
+  font-size: var(--fs-md);
+  font-weight: 600;
+  color: var(--text);
+}
+.privacy-section p {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+.privacy-section code {
+  background: var(--surface-alt);
+  padding: 2px 6px;
+  border-radius: var(--r-sm);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--text);
+}
+
+.privacy-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.privacy-icon-success {
+  background: var(--success-light);
+  color: var(--success);
+}
+.privacy-icon-info {
+  background: var(--info-light);
+  color: var(--info);
+}
+
+.privacy-summary {
+  margin-top: var(--sp-5);
+  padding: var(--sp-4);
+  background: var(--success-light);
+  border-radius: var(--r-md);
+  color: var(--text);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+.privacy-summary strong {
+  color: var(--success);
+  display: inline-block;
+  margin-right: var(--sp-1);
+}
+[data-theme="dark"] .privacy-summary { background: #064E3B; color: #A7F3D0; }
+[data-theme="dark"] .privacy-summary strong { color: #34D399; }
+
+.privacy-footer-note {
+  margin: var(--sp-4) 0 0 0;
+  text-align: center;
+  color: var(--text-subtle);
+  font-size: var(--fs-xs);
+}
+
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -1698,6 +1794,35 @@ a:hover { text-decoration: underline; }
   margin: 0 0 var(--sp-4) 0;
   font-size: var(--fs-sm);
   color: var(--text-muted);
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-4);
+}
+.section-head h2 { margin: 0; }
+.section-head .subtitle { margin: 0; }
+.section-head-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-lg);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.section-head-icon-primary {
+  background: var(--primary-light);
+  color: var(--primary);
+}
+.section-head-icon-success {
+  background: var(--success-light);
+  color: var(--success);
+}
+.section-head-icon-info {
+  background: var(--info-light);
+  color: var(--info);
 }
 
 .settings-card {
