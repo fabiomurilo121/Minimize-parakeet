@@ -1,4 +1,4 @@
-/* Redutor de Imagens - Worker de processamento (sharp)
+/* Parakeet Minimizer - Worker de processamento (sharp)
    Recebe { taskId, file, options } e devolve { taskId, status, ... } */
 
 const { parentPort } = require('worker_threads');

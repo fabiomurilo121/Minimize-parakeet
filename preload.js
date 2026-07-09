@@ -35,4 +35,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   /* Janela */
   openSettings:     () => ipcRenderer.send('window:open-settings'),
+  onNavigateSettings: (cb) => ipcRenderer.on('navigate:settings', () => cb()),
 });

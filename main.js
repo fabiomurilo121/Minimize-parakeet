@@ -1,4 +1,4 @@
-/* Redutor de Imagens - Electron main process
+/* Parakeet Minimizer - Electron main process
    - Janela principal + janela de configuracoes
    - IPC: dialog de arquivos, metadados via sharp, pool de workers, persistencia
    - Single-instance lock
@@ -29,7 +29,7 @@ function createMainWindow() {
     minWidth: 960,
     minHeight: 600,
     backgroundColor: '#F9FAFB',
-    title: 'Redutor de Imagens',
+    title: 'Parakeet Minimizer',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -40,27 +40,6 @@ function createMainWindow() {
   mainWindow.setMenuBarVisibility(false);
   mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
   mainWindow.on('closed', () => { mainWindow = null; });
-}
-
-function createSettingsWindow() {
-  if (settingsWindow) { settingsWindow.focus(); return; }
-  settingsWindow = new BrowserWindow({
-    width: 820,
-    height: 720,
-    minWidth: 640,
-    parent: mainWindow,
-    backgroundColor: '#F9FAFB',
-    title: 'Configuracoes - Redutor de Imagens',
-    webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
-      contextIsolation: true,
-      nodeIntegration: false,
-      sandbox: false,
-    },
-  });
-  settingsWindow.setMenuBarVisibility(false);
-  settingsWindow.loadFile(path.join(__dirname, 'renderer', 'settings.html'));
-  settingsWindow.on('closed', () => { settingsWindow = null; });
 }
 
 /* ============================================================
@@ -333,7 +312,6 @@ ipcMain.handle('settings:get', async () => {
     runAsAdmin: false,
     threads: getWorkerCount(),
     afterAction: 'open-output',
-    autoUpdate: true,
   });
 });
 
@@ -391,7 +369,14 @@ ipcMain.handle('context-menu:uninstall', async () => {
   }
 });
 
-ipcMain.on('window:open-settings', () => createSettingsWindow());
+ipcMain.on('window:open-settings', () => {
+  // Settings agora eh uma view dentro da main window (sem flash)
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+    mainWindow.webContents.send('navigate:settings');
+  }
+});
 
 /* ============================================================
    Single-instance lock

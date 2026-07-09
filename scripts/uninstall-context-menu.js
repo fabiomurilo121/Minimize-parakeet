@@ -1,8 +1,8 @@
-/* Redutor de Imagens - Removedor do menu de contexto do Windows */
+/* Parakeet Minimizer - Removedor do menu de contexto do Windows */
 
 const { app } = require('electron');
 
-const VERB_NAME  = 'ReduzirComRedutorDeImagens';
+const VERB_NAME  = 'ReduzirComParakeetMinimizer';
 const EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp'];
 const HKCU_BASE  = 'HKCU\\Software\\Classes';
 

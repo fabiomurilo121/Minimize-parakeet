@@ -1,7 +1,7 @@
 {
   "name": "minimize-parakeet",
-  "version": "1.0.0",
-  "description": "Redutor de Imagens - desktop app para reduzir tamanho e dimensoes de imagens em lote",
+  "version": "1.0.1",
+  "description": "Parakeet Minimizer - desktop app para reduzir tamanho e dimensoes de imagens em lote",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
@@ -18,7 +18,7 @@
   },
   "build": {
     "appId": "com.minimize.parakeet",
-    "productName": "Redutor de Imagens",
+    "productName": "Parakeet Minimizer",
     "win": {
       "target": "nsis"
     }

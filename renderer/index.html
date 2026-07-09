@@ -2,8 +2,24 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self';" />
-  <title>Redutor de Imagens</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data:;" />
+  <title>Parakeet Minimizer</title>
+  <script>
+    // Executado ANTES do CSS para evitar flash de tema errado
+    (function() {
+      try {
+        var saved = localStorage.getItem('pm-theme');
+        if (!saved) saved = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', saved);
+        // Pre-pinta o fundo do <html> para impedir flash branco puro
+        document.documentElement.style.backgroundColor = saved === 'dark' ? '#0F172A' : '#F9FAFB';
+        document.documentElement.style.colorScheme = saved;
+      } catch (e) {
+        document.documentElement.setAttribute('data-theme', 'light');
+        document.documentElement.style.backgroundColor = '#F9FAFB';
+      }
+    })();
+  </script>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -16,8 +32,8 @@
     <header class="topbar">
       <div class="topbar-left">
         <a class="brand" href="#/">
-          <span class="brand-logo" id="brandLogo"></span>
-          <span>Redutor de Imagens</span>
+          <img src="../assets/logos/logo-text.png" alt="Parakeet Minimizer" class="brand-logo-img" id="brandLogo" />
+          <span class="visually-hidden">Parakeet Minimizer</span>
         </a>
         <a href="#/" class="back-link hidden" id="backLink">
           <span id="icoArrowLeft"></span>
@@ -29,6 +45,16 @@
           <span id="icoFolderOpen"></span>
           Abrir Arquivos
         </button>
+        <label class="theme-switch" id="themeSwitch" title="Alternar tema claro/escuro">
+          <input type="checkbox" id="themeSwitchInput" />
+          <span class="theme-switch-track">
+            <span class="theme-switch-icons">
+              <span class="theme-icon theme-icon-sun" id="icoSun"></span>
+              <span class="theme-icon theme-icon-moon" id="icoMoon"></span>
+            </span>
+            <span class="theme-switch-thumb"></span>
+          </span>
+        </label>
         <button class="btn-icon" id="settingsBtn" title="Configurações">
           <span id="icoSettings"></span>
         </button>
@@ -58,11 +84,11 @@
           </div>
 
           <!-- Indicacao persistente de drag & drop -->
-          <div class="drop-hint" id="dropHint">
+          <div class="drop-hint clickable" id="dropHint" role="button" tabindex="0" title="Clique para abrir o Explorer">
             <span class="drop-hint-icon" id="icoUploadCloud"></span>
             <div class="drop-hint-text">
-              <strong>Arraste e solte imagens aqui</strong>
-              <span>ou clique em <b>Abrir Arquivos</b> no topo · JPG, PNG e WebP</span>
+              <strong id="dropHintTitle">Arraste e solte imagens aqui</strong>
+              <span id="dropHintSub">ou <b>clique aqui</b> para selecionar no Explorer · JPG, PNG e WebP</span>
             </div>
           </div>
 
@@ -74,6 +100,7 @@
               <div>Dimensões</div>
               <div>Tamanho</div>
               <div>Status</div>
+              <div></div>
             </div>
             <div id="queueBody">
               <!-- Linhas ou empty state -->
@@ -326,10 +353,139 @@
     </section>
 
     <!-- ============================================
-         STATUSBAR
+         VIEW: SETTINGS
+         ============================================ -->
+    <section class="view" id="view-settings">
+      <main class="settings-container">
+        <header class="settings-header">
+          <div class="ico-box"><span id="icoSettingsBig"></span></div>
+          <div>
+            <h1>Configurações</h1>
+            <p>Personalize como o Parakeet Minimizer se integra ao seu sistema e processa seus arquivos.</p>
+          </div>
+        </header>
+
+        <!-- Instalação & Integração -->
+        <section class="settings-section">
+          <h2>Instalação &amp; Integração</h2>
+          <p class="subtitle">Configure a presença do aplicativo no Windows para acesso rápido.</p>
+
+          <div class="settings-card">
+            <div class="card-row">
+              <div class="card-row-icon"><span id="icoGrid"></span></div>
+              <div class="card-row-body">
+                <div class="card-row-title">Menu de Contexto do Windows</div>
+                <div class="card-row-description">
+                  Adiciona a opção "Reduzir Imagens" ao clicar com o botão direito em arquivos JPG, PNG e WebP.
+                </div>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" id="ctxMenuToggle" checked />
+              </label>
+            </div>
+
+            <div class="card-row">
+              <div class="card-row-icon"><span id="icoMonitor"></span></div>
+              <div class="card-row-body">
+                <div class="card-row-title">Criar Atalho no Desktop</div>
+                <div class="card-row-description">
+                  Mantém um ícone de acesso rápido na sua área de trabalho para fácil arrastar e soltar.
+                </div>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" id="desktopShortcutToggle" />
+              </label>
+            </div>
+
+            <div class="card-row">
+              <div class="card-row-icon"><span id="icoShield"></span></div>
+              <div class="card-row-body">
+                <div class="card-row-title">Executar como Administrador</div>
+                <div class="card-row-description">
+                  Permite que o aplicativo processe arquivos em pastas protegidas do sistema.
+                </div>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" id="adminToggle" />
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <!-- Processamento & Performance -->
+        <section class="settings-section">
+          <h2>Processamento &amp; Performance</h2>
+          <p class="subtitle">Ajuste o comportamento do motor de compressão para sua máquina.</p>
+
+          <div class="settings-card">
+            <div class="thread-row">
+              <div class="ico-box"><span id="icoZap"></span></div>
+              <div class="body">
+                <div class="title">Threads de Processamento</div>
+                <div class="desc">Número de núcleos do processador usados simultaneamente. Valores altos aceleram o processo mas podem travar o PC.</div>
+              </div>
+              <div class="slider-wrap">
+                <input class="slider" type="range" id="threadsSlider" min="1" max="16" value="4" />
+                <span class="slider-value" id="threadsValue">4</span>
+              </div>
+            </div>
+
+            <div class="after-action-row">
+              <div class="ico-box" style="background: var(--success-light); color: var(--success);">
+                <span id="icoExternalLink"></span>
+              </div>
+              <div class="body">
+                <div class="title">Ação após finalizar</div>
+                <div class="desc">O que o aplicativo deve fazer automaticamente após completar uma fila de processamento.</div>
+              </div>
+              <select class="select" id="afterActionSelect" style="width: 200px;">
+                <option value="open-output">Abrir pasta de saída</option>
+                <option value="notify">Apenas notificar</option>
+                <option value="shutdown">Desligar o PC</option>
+                <option value="none">Nada</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <!-- Sistema -->
+        <section class="settings-section">
+          <h2>Sistema</h2>
+          <p class="subtitle">Informações do software instalado.</p>
+
+          <div class="settings-card">
+            <div class="card-row">
+              <div class="card-row-icon"><span id="icoInfo"></span></div>
+              <div class="card-row-body">
+                <div class="label">VERSÃO ATUAL</div>
+                <div class="value">Parakeet Minimizer v1.0.1 (Build 20231024)</div>
+              </div>
+              <button class="btn btn-secondary btn-sm">Verificar Agora</button>
+            </div>
+          </div>
+        </section>
+
+        <footer class="settings-footer">
+          <div class="legal">
+            <p>Desenvolvido para máxima eficiência.</p>
+            <a href="#">Política de Privacidade</a>
+          </div>
+          <div class="actions">
+            <button class="btn btn-secondary" id="discardBtn">Descartar</button>
+            <button class="btn btn-primary" id="saveBtn">
+              <span id="icoSave"></span>
+              Salvar Alterações
+            </button>
+          </div>
+        </footer>
+      </main>
+    </section>
+
+    <!-- ============================================
+         STATUSBAR (compartilhada, contexto dinamico)
          ============================================ -->
     <footer class="statusbar">
-      <div class="statusbar-left">
+      <div class="statusbar-left" id="statusbarContext">
         <span id="statusbarSelection">0 imagens selecionadas (0 MB)</span>
         <span class="status-dot" id="statusbarReady">
           <span class="status-dot-mark" style="width:8px;height:8px;border-radius:50%;background: var(--success);"></span>
@@ -338,7 +494,7 @@
       </div>
       <div class="statusbar-right">
         <a href="#" id="openOutputBtn">Abrir pasta de saída</a>
-        <span>v1.0.0</span>
+        <span id="statusbarVersion">v1.0.1</span>
       </div>
     </footer>
   </div>
@@ -519,7 +675,7 @@
       <div class="modal-header">
         <div class="modal-header-icon"><span id="icoHelpCircle"></span></div>
         <div class="modal-header-text">
-          <h2>Como usar o Redutor de Imagens</h2>
+          <h2>Como usar o Parakeet Minimizer</h2>
           <p>Dicas rápidas para tirar o melhor proveito do app.</p>
         </div>
         <button class="modal-close" data-close="help">
@@ -549,5 +705,6 @@
   </div>
 
   <script src="app.js"></script>
+  <script src="settings.js"></script>
 </body>
 </html>

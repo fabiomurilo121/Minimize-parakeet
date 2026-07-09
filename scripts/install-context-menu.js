@@ -1,13 +1,13 @@
-/* Redutor de Imagens - Instalador do menu de contexto do Windows
-   Adiciona verb "Reduzir com Redutor de Imagens" para arquivos JPG/PNG/WebP.
+/* Parakeet Minimizer - Instalador do menu de contexto do Windows
+   Adiciona verb "Reduzir com Parakeet Minimizer" para arquivos JPG/PNG/WebP.
    Executado pelo main process via child_process.execFile(process.execPath, [this]). */
 
 const { app } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
-const VERB_NAME  = 'ReduzirComRedutorDeImagens';
-const MENU_TEXT  = 'Reduzir com Redutor de Imagens';
+const VERB_NAME  = 'ReduzirComParakeetMinimizer';
+const MENU_TEXT  = 'Reduzir com Parakeet Minimizer';
 const EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp'];
 const HKCU_BASE  = 'HKCU\\Software\\Classes';
 
@@ -18,7 +18,7 @@ function reg(...args) {
 
 function exePath() {
   // Quando executado dentro do Electron, process.execPath aponta para o electron.exe
-  // Em producao (instalado), aponta para o Redutor de Imagens.exe
+  // Em producao (instalado), aponta para o Parakeet Minimizer.exe
   return process.execPath;
 }
 

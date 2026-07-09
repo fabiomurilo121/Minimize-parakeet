@@ -1,4 +1,4 @@
-/* Redutor de Imagens - Renderer (index.html)
+/* Parakeet Minimizer - Renderer (index.html)
    Logica completa: fila + presets + processamento real via IPC + modais. */
 
 const api = window.electronAPI || {};
@@ -7,6 +7,55 @@ const HAS_IPC = !!api.openFilesDialog;
 /* =============================================================
    1) Icones (inline SVG)
    ============================================================= */
+
+const ICONS_THEME = {
+  sun: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="6.34" y2="6.34"/><line x1="17.66" y1="17.66" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="6.34" y2="17.66"/><line x1="17.66" y1="6.34" x2="19.07" y2="4.93"/></svg>',
+  moon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>',
+};
+
+function getCurrentTheme() {
+  return document.documentElement.getAttribute('data-theme') || 'light';
+}
+
+function setTheme(theme, persist = true) {
+  document.documentElement.setAttribute('data-theme', theme);
+  // Sincroniza o switch (checkbox)
+  const input = document.getElementById('themeSwitchInput');
+  if (input) input.checked = theme === 'dark';
+  // Pinta os icones do switch
+  const sun = document.getElementById('icoSun');
+  const moon = document.getElementById('icoMoon');
+  if (sun)  sun.innerHTML  = ICONS_THEME.sun;
+  if (moon) moon.innerHTML = ICONS_THEME.moon;
+  // Troca a logo entre clara e escura
+  const logo = document.querySelector('.brand-logo-img');
+  if (logo) {
+    logo.src = theme === 'dark'
+      ? '../assets/logos/logo-text-dark.png'
+      : '../assets/logos/logo-text.png';
+  }
+  if (persist) {
+    try { localStorage.setItem('pm-theme', theme); } catch {}
+  }
+}
+
+function toggleTheme() {
+  const next = getCurrentTheme() === 'dark' ? 'light' : 'dark';
+  setTheme(next);
+  showToast('Tema ' + (next === 'dark' ? 'escuro' : 'claro') + ' ativado.', 'info');
+}
+
+function initTheme() {
+  let saved = null;
+  try { saved = localStorage.getItem('pm-theme'); } catch {}
+  if (!saved) {
+    saved = window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  setTheme(saved, false);
+}
+
+// Expõe helpers de tema globalmente para outros scripts (settings.js)
+window.PMTheme = { setTheme, getCurrentTheme, initTheme, toggleTheme, ICONS_THEME };
 
 const ICONS = {
   activity: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>',
@@ -52,7 +101,7 @@ function setIcon(id, key) {
 
 function paintIcons() {
   const map = {
-    brandLogo: 'activity', icoArrowLeft: 'arrowLeft', icoFolderOpen: 'folderOpen',
+    icoArrowLeft: 'arrowLeft', icoFolderOpen: 'folderOpen',
     icoSettings: 'settings', icoHelp: 'help', icoTrash: 'trash', icoLock: 'lock',
     icoFolder: 'folder', icoMaximize: 'maximize', icoArchive: 'archive',
     icoZap: 'zap', icoClock: 'clock', icoBarChart: 'barChart', icoCheck: 'check',
@@ -62,7 +111,7 @@ function paintIcons() {
     icoPlus: 'plus', icoX2: 'x', icoX3: 'x', icoCheck2: 'check', icoRotate: 'rotate',
     icoX4: 'x', icoHelpCircle: 'helpCircle',
     icoRefreshCw: 'refreshCw', icoFolderSm: 'folderSm',
-  icoUploadCloud: 'uploadCloud', icoInfoSm: 'infoSm',
+    icoUploadCloud: 'uploadCloud', icoInfoSm: 'infoSm',
   };
   for (const [id, key] of Object.entries(map)) setIcon(id, key);
 }
@@ -134,10 +183,11 @@ function showToast(msg, kind = 'info') {
 }
 
 function updateStatusbar() {
+  const el = $('#statusbarSelection');
+  if (!el) return; // em outras views o seletor nao existe
   const n = STATE.files.length;
   const size = totalSize();
-  $('#statusbarSelection').textContent =
-    `${n} ${n === 1 ? 'imagem selecionada' : 'imagens selecionadas'} (${formatBytes(size)})`;
+  el.textContent = `${n} ${n === 1 ? 'imagem selecionada' : 'imagens selecionadas'} (${formatBytes(size)})`;
 }
 
 function getCurrentOutputDir() {
@@ -236,15 +286,25 @@ function clearFiles() {
 function renderQueue() {
   const body = $('#queueBody');
   const hint = $('#dropHint');
+  const title = $('#dropHintTitle');
+  const sub = $('#dropHintSub');
   body.innerHTML = '';
   if (STATE.files.length === 0) {
     body.innerHTML = `
-      <div class="empty queue-empty-state">
+      <div class="empty queue-empty-state clickable" id="emptyPickBtn" role="button" tabindex="0" title="Clique para abrir o Explorer">
         <div class="empty-icon">${ICONS.uploadCloud}</div>
         <h3>Solte suas imagens aqui</h3>
-        <p>Arraste arquivos JPG, PNG ou WebP para começar<br>ou clique em <b>Abrir Arquivos</b> no topo.</p>
+        <p>Arraste arquivos JPG, PNG ou WebP para começar<br>ou <b>clique aqui</b> para selecionar no Explorer.</p>
       </div>`;
     if (hint) hint.classList.remove('has-files');
+    if (title) title.textContent = 'Arraste e solte imagens aqui';
+    if (sub) sub.innerHTML = 'ou <b>clique aqui</b> para selecionar no Explorer · JPG, PNG e WebP';
+    // Wire up do botao do empty state
+    const ep = $('#emptyPickBtn');
+    if (ep) {
+      ep.addEventListener('click', openPicker);
+      ep.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openPicker(); } });
+    }
     return;
   }
   for (const f of STATE.files) {
@@ -254,8 +314,8 @@ function renderQueue() {
     row.innerHTML = `
       <div class="queue-thumb"></div>
       <div class="queue-name">
-        <span class="filename" title="${f.name}">${f.name}</span>
-        <span class="ext">${f.ext || 'IMG'}</span>
+        <span class="filename" title="${escapeHtml(f.name)}">${escapeHtml(f.name)}</span>
+        <span class="ext">${escapeHtml(f.ext || 'IMG')}</span>
       </div>
       <div class="queue-dim">
         <span>${dim}</span>
@@ -263,10 +323,44 @@ function renderQueue() {
       </div>
       <div>${formatBytes(f.size)}</div>
       <div><span class="badge badge-pending">Pendente</span></div>
+      <div>
+        <button class="btn-icon btn-remove" data-remove="${f.id}" title="Remover da fila" aria-label="Remover ${escapeHtml(f.name)}">
+          ${ICONS.x}
+        </button>
+      </div>
     `;
     body.appendChild(row);
   }
+  // Wire up dos botoes de remover
+  body.querySelectorAll('[data-remove]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.remove;
+      STATE.files = STATE.files.filter(x => x.id !== id);
+      renderQueue();
+      updateProcessBtn();
+      updateStatusbar();
+      updateOutputHint();
+      showToast('Arquivo removido da fila.', 'info');
+    });
+  });
   if (hint) hint.classList.add('has-files');
+  if (title) title.textContent = 'Arraste mais imagens para adicionar à fila';
+  if (sub) sub.innerHTML = 'ou <b>clique aqui</b> para abrir o Explorer · JPG, PNG e WebP';
+}
+
+// Abre o file picker do Explorer (reutilizado por botoes e drop areas)
+async function openPicker() {
+  if (!HAS_IPC || !api.openFilesDialog) {
+    showToast('Disponivel apenas no Electron.', 'info');
+    return;
+  }
+  try {
+    const files = await api.openFilesDialog();
+    addFiles(files);
+  } catch (err) {
+    showToast('Erro ao abrir o Explorer: ' + err.message, 'error');
+  }
 }
 
 /* =============================================================
@@ -664,13 +758,38 @@ function showView(name) {
   if (v) v.classList.add('active');
   const back = $('#backLink');
   if (back) back.classList.toggle('hidden', name === 'main');
+
+  // Marca ativo no topbar (settings)
+  const settingsBtn = $('#settingsBtn');
+  if (settingsBtn) settingsBtn.classList.toggle('active', name === 'settings');
+
+  // Statusbar com contexto dinamico
+  updateStatusbarContext(name);
+}
+
+function updateStatusbarContext(view) {
+  const left = $('#statusbarContext');
+  const versionEl = $('#statusbarVersion');
+  if (!left) return;
+  if (view === 'settings') {
+    const cores = navigator.hardwareConcurrency || 4;
+    left.innerHTML = `<span>THREADS DE PROCESSAMENTO: <strong>${cores}</strong></span>`;
+    if (versionEl) versionEl.textContent = 'v1.0.1';
+  } else {
+    left.innerHTML = `
+      <span id="statusbarSelection">${STATE.files.length} ${STATE.files.length === 1 ? 'imagem selecionada' : 'imagens selecionadas'} (${formatBytes(totalSize())})</span>
+      <span class="status-dot" id="statusbarReady">
+        <span class="status-dot-mark" style="width:8px;height:8px;border-radius:50%;background: var(--success);"></span>
+        Pronto para processar
+      </span>`;
+  }
 }
 
 function route() {
   const hash = location.hash || '#/';
   if (hash.startsWith('#/processing')) showView('processing');
   else if (hash.startsWith('#/quick-action')) { showView('main'); openQuickAction(); }
-  else if (hash.startsWith('#/settings')) { window.location.href = 'settings.html'; }
+  else if (hash.startsWith('#/settings')) showView('settings');
   else showView('main');
 }
 
@@ -700,8 +819,13 @@ function attachListeners() {
   });
 
   // Settings / Help
-  $('#settingsBtn').addEventListener('click', () => { window.location.href = 'settings.html'; });
+  $('#settingsBtn').addEventListener('click', () => { location.hash = '#/settings'; });
   $('#helpBtn').addEventListener('click', openHelp);
+  $('#themeSwitchInput').addEventListener('change', () => {
+    const next = $('#themeSwitchInput').checked ? 'dark' : 'light';
+    setTheme(next);
+    showToast('Tema ' + (next === 'dark' ? 'escuro' : 'claro') + ' ativado.', 'info');
+  });
 
   // Clear list
   $('#clearBtn').addEventListener('click', () => {
@@ -926,6 +1050,12 @@ function attachListeners() {
     startProcessing();
   });
 
+  // Drop-hint clicavel: abre o file picker
+  $('#dropHint').addEventListener('click', openPicker);
+  $('#dropHint').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openPicker(); }
+  });
+
   // Hash routing
   window.addEventListener('hashchange', route);
 
@@ -966,7 +1096,11 @@ function attachListeners() {
   $('#openOutputBtn').addEventListener('click', async (e) => {
     e.preventDefault();
     if (HAS_IPC && api.openFolder) {
-      const target = STATE.customDestPath || null;
+      const target = getCurrentOutputDir();
+      if (!target) {
+        showToast('Adicione imagens antes de abrir a pasta de saida.', 'info');
+        return;
+      }
       await api.openFolder(target);
     } else {
       showToast('Disponivel apenas no Electron.', 'info');
@@ -979,6 +1113,9 @@ function attachListeners() {
    ============================================================= */
 
 async function boot() {
+  try { initTheme(); }
+  catch (err) { console.error('[initTheme]', err); }
+
   try { paintIcons(); }
   catch (err) { console.error('[paintIcons]', err); }
 
@@ -1009,10 +1146,18 @@ async function boot() {
     });
   }
 
+  // Navegacao para settings via IPC (ex: menu nativo)
+  if (HAS_IPC && api.onNavigateSettings) {
+    api.onNavigateSettings(() => { location.hash = '#/settings'; });
+  }
+
   // Aplica visual inicial do botao processar
   updateProcessBtn();
 
-  console.log('[Redutor] Boot OK. HAS_IPC =', HAS_IPC);
+  // Roteia para a view correta caso a pagina carregue com um hash
+  route();
+
+  console.log('[Parakeet Minimizer] Boot OK. HAS_IPC =', HAS_IPC);
 }
 
 document.addEventListener('DOMContentLoaded', boot);

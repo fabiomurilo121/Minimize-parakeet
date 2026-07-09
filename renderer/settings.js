@@ -1,7 +1,9 @@
-/* Redutor de Imagens - Settings renderer */
+/* Parakeet Minimizer - Settings renderer */
 const api = window.electronAPI || {};
 const HAS_IPC = !!api.getSettings;
 const $ = (s) => document.querySelector(s);
+const PMTheme = window.PMTheme || {};
+const setTheme = PMTheme.setTheme || (() => {});
 
 const svg = (path, size = 20) => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`;
 
@@ -23,10 +25,10 @@ const I = {
 };
 
 const iconMap = {
-  brandLogo: 'activity', icoArrowLeft: 'arrowLeft', icoFolderOpen: 'folderOpen',
+  icoArrowLeft: 'arrowLeft', icoFolderOpen: 'folderOpen',
   icoSettings: 'settings', icoHelp: 'help', icoSettingsBig: 'settings',
   icoExternalLink: 'externalLink', icoGrid: 'grid', icoMonitor: 'monitor',
-  icoShield: 'shield', icoZap: 'zap', icoRefresh: 'refresh', icoInfo: 'info',
+  icoShield: 'shield', icoZap: 'zap', icoInfo: 'info',
   icoSave: 'save',
 };
 
@@ -44,7 +46,6 @@ function collect() {
     runAsAdmin:      $('#adminToggle')?.checked ?? false,
     threads:         parseInt($('#threadsSlider')?.value || '4', 10),
     afterAction:     $('#afterActionSelect')?.value || 'open-output',
-    autoUpdate:      $('#autoUpdateToggle')?.checked ?? true,
   };
 }
 
@@ -56,7 +57,6 @@ function applySettings(s) {
   if ($('#threadsSlider'))         $('#threadsSlider').value           = s.threads ?? 4;
   if ($('#threadsValue'))          $('#threadsValue').textContent      = s.threads ?? 4;
   if ($('#afterActionSelect'))     $('#afterActionSelect').value       = s.afterAction || 'open-output';
-  if ($('#autoUpdateToggle'))      $('#autoUpdateToggle').checked      = !!s.autoUpdate;
 }
 
 let baselineSettings = null;
@@ -104,6 +104,20 @@ async function uninstallContextMenu() {
 
 async function init() {
   paintIcons();
+
+  // Theme switch
+  $('#themeSwitchInput')?.addEventListener('change', () => {
+    const next = $('#themeSwitchInput').checked ? 'dark' : 'light';
+    setTheme(next);
+  });
+
+  // Mostra numero de threads da maquina no statusbar
+  const cpuEl = $('#cpuThreads');
+  if (cpuEl) {
+    const cores = navigator.hardwareConcurrency || 4;
+    cpuEl.textContent = String(cores);
+    cpuEl.title = `${cores} nucleos logicos detectados`;
+  }
 
   // Slider live update
   const slider = $('#threadsSlider');
