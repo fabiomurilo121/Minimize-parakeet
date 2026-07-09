@@ -6,31 +6,12 @@ out/
 *.log
 npm-debug.log*
 
-# Environment
-.env
-.env.local
-
-# IDE
+# Editor / OS
 .vscode/
 .idea/
-*.swp
-
-# OS
 .DS_Store
 Thumbs.db
 
-# Build artifacts
-*.exe
-*.dmg
-*.AppImage
-*.snap
-*.deb
-*.rpm
-
-# Generated icons (criados via electron-builder icon)
-build/icon.ico
-build/icon.png
-
-# Cache
-.cache/
-.tmp/
+# Env
+.env
+.env.local

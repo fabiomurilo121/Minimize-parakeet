@@ -1,310 +1,187 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self';" />
   <title>Configurações — Redutor de Imagens</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
-  <style>
-    body { background: var(--bg); padding: 0; }
-    .settings-shell {
-      max-width: 720px;
-      margin: 0 auto;
-      padding: 32px 28px;
-    }
-    .settings-header {
-      display: flex;
-      gap: 16px;
-      align-items: center;
-      padding-bottom: 24px;
-      border-bottom: 1px solid var(--line);
-      margin-bottom: 32px;
-    }
-    .settings-icon {
-      width: 48px; height: 48px;
-      background: var(--primary-soft);
-      color: var(--primary);
-      border-radius: 12px;
-      display: grid; place-items: center;
-    }
-    .settings-header h1 {
-      margin: 0;
-      font-size: 24px;
-      font-weight: 600;
-      letter-spacing: -0.01em;
-    }
-    .settings-header p {
-      margin: 4px 0 0;
-      color: var(--muted);
-      font-size: 13px;
-    }
-
-    .section { margin-bottom: 32px; }
-    .section-title {
-      font-size: 16px;
-      font-weight: 600;
-      margin: 0 0 4px;
-    }
-    .section-subtitle {
-      font-size: 13px;
-      color: var(--muted);
-      margin: 0 0 14px;
-    }
-
-    .setting-card {
-      background: var(--surface);
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      padding: 16px;
-    }
-    .setting-row {
-      display: flex;
-      gap: 14px;
-      align-items: flex-start;
-      padding: 14px 0;
-      border-bottom: 1px solid var(--line-soft);
-    }
-    .setting-row:last-child { border-bottom: none; padding-bottom: 0; }
-    .setting-row:first-child { padding-top: 0; }
-
-    .setting-icon {
-      width: 36px; height: 36px;
-      background: var(--surface-2);
-      color: var(--ink-2);
-      border-radius: 9px;
-      display: grid; place-items: center;
-      flex-shrink: 0;
-    }
-    .setting-info { flex: 1; }
-    .setting-title {
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--ink);
-      margin-bottom: 2px;
-    }
-    .setting-desc {
-      font-size: 12px;
-      color: var(--muted);
-      line-height: 1.5;
-    }
-
-    /* Toggle switch */
-    .toggle {
-      position: relative;
-      width: 42px;
-      height: 24px;
-      flex-shrink: 0;
-    }
-    .toggle input { display: none; }
-    .toggle-track {
-      position: absolute;
-      inset: 0;
-      background: var(--line);
-      border-radius: 12px;
-      transition: background 0.2s;
-      cursor: pointer;
-    }
-    .toggle-track::after {
-      content: '';
-      position: absolute;
-      width: 18px;
-      height: 18px;
-      background: white;
-      border-radius: 50%;
-      top: 3px;
-      left: 3px;
-      transition: transform 0.2s;
-      box-shadow: var(--shadow-sm);
-    }
-    .toggle input:checked + .toggle-track {
-      background: var(--primary);
-    }
-    .toggle input:checked + .toggle-track::after {
-      transform: translateX(18px);
-    }
-
-    .action-row {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-      margin-bottom: 14px;
-    }
-    .action-row .slider-row { flex: 1; }
-    .action-row .slider { margin: 0; }
-    .slider-num {
-      font-family: var(--font-mono);
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--primary);
-      min-width: 32px;
-      text-align: right;
-    }
-
-    .actions-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding-top: 24px;
-      border-top: 1px solid var(--line);
-    }
-    .actions-info {
-      font-size: 12px;
-      color: var(--muted);
-    }
-
-    .version-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 14px 16px;
-      background: var(--surface-2);
-      border-radius: var(--radius-sm);
-      margin-top: 14px;
-    }
-    .version-row small {
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--muted);
-      display: block;
-      margin-bottom: 4px;
-    }
-    .version-row strong {
-      font-family: var(--font-mono);
-      font-size: 13px;
-    }
-  </style>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div class="settings-shell">
-    <header class="settings-header">
-      <div class="settings-icon">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+
+  <div class="app">
+    <header class="topbar">
+      <div class="topbar-left">
+        <a class="brand" href="index.html">
+          <span class="brand-logo" id="brandLogo"></span>
+          <span>Redutor de Imagens</span>
+        </a>
+        <a href="index.html" class="back-link">
+          <span id="icoArrowLeft"></span>
+          Voltar ao Início
+        </a>
       </div>
-      <div>
-        <h1>Configurações</h1>
-        <p>Personalize como o Redutor de Imagens se integra ao seu sistema e processa seus arquivos.</p>
+      <div class="topbar-right">
+        <button class="btn btn-secondary" id="openFilesBtn">
+          <span id="icoFolderOpen"></span>
+          Abrir Arquivos
+        </button>
+        <button class="btn-icon" id="settingsBtn" title="Configurações" style="background: var(--primary-light); color: var(--primary);">
+          <span id="icoSettings"></span>
+        </button>
+        <button class="btn-icon" id="helpBtn" title="Ajuda">
+          <span id="icoHelp"></span>
+        </button>
       </div>
     </header>
 
-    <div class="section">
-      <h3 class="section-title">Instalação & Integração</h3>
-      <p class="section-subtitle">Configure a presença do aplicativo no Windows para acesso rápido.</p>
-
-      <div class="setting-card">
-        <div class="setting-row">
-          <div class="setting-icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-          </div>
-          <div class="setting-info">
-            <div class="setting-title">Menu de Contexto do Windows</div>
-            <div class="setting-desc">Adiciona a opção "Reduzir Imagens" ao clicar com o botão direito em arquivos JPG, PNG e WebP.</div>
-          </div>
-          <label class="toggle">
-            <input type="checkbox" id="toggleContextMenu">
-            <span class="toggle-track"></span>
-          </label>
+    <main class="settings-container">
+      <header class="settings-header">
+        <div class="ico-box"><span id="icoSettingsBig"></span></div>
+        <div>
+          <h1>Configurações</h1>
+          <p>Personalize como o Redutor de Imagens se integra ao seu sistema e processa seus arquivos.</p>
         </div>
+      </header>
 
-        <div class="setting-row">
-          <div class="setting-icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      <!-- Instalação & Integração -->
+      <section class="settings-section">
+        <h2>Instalação &amp; Integração</h2>
+        <p class="subtitle">Configure a presença do aplicativo no Windows para acesso rápido.</p>
+
+        <div class="settings-card">
+          <div class="card-row">
+            <div class="card-row-icon"><span id="icoGrid"></span></div>
+            <div class="card-row-body">
+              <div class="card-row-title">Menu de Contexto do Windows</div>
+              <div class="card-row-description">
+                Adiciona a opção "Reduzir Imagens" ao clicar com o botão direito em arquivos JPG, PNG e WebP.
+              </div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="ctxMenuToggle" checked />
+            </label>
           </div>
-          <div class="setting-info">
-            <div class="setting-title">Criar Atalho no Desktop</div>
-            <div class="setting-desc">Mantém um ícone de acesso rápido na sua área de trabalho para fácil arrastar e soltar.</div>
+
+          <div class="card-row">
+            <div class="card-row-icon"><span id="icoMonitor"></span></div>
+            <div class="card-row-body">
+              <div class="card-row-title">Criar Atalho no Desktop</div>
+              <div class="card-row-description">
+                Mantém um ícone de acesso rápido na sua área de trabalho para fácil arrastar e soltar.
+              </div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="desktopShortcutToggle" />
+            </label>
           </div>
-          <label class="toggle">
-            <input type="checkbox" id="toggleDesktopShortcut">
-            <span class="toggle-track"></span>
-          </label>
+
+          <div class="card-row">
+            <div class="card-row-icon"><span id="icoShield"></span></div>
+            <div class="card-row-body">
+              <div class="card-row-title">Executar como Administrador</div>
+              <div class="card-row-description">
+                Permite que o aplicativo processe arquivos em pastas protegidas do sistema.
+              </div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="adminToggle" />
+            </label>
+          </div>
         </div>
-      </div>
-    </div>
+      </section>
 
-    <div class="section">
-      <h3 class="section-title">Processamento & Performance</h3>
-      <p class="section-subtitle">Ajuste o comportamento do motor de compressão para sua máquina.</p>
+      <!-- Processamento & Performance -->
+      <section class="settings-section">
+        <h2>Processamento &amp; Performance</h2>
+        <p class="subtitle">Ajuste o comportamento do motor de compressão para sua máquina.</p>
 
-      <div class="setting-card">
-        <div class="setting-row">
-          <div class="setting-icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        <div class="settings-card">
+          <div class="thread-row">
+            <div class="ico-box"><span id="icoZap"></span></div>
+            <div class="body">
+              <div class="title">Threads de Processamento</div>
+              <div class="desc">Número de núcleos do processador usados simultaneamente. Valores altos aceleram o processo mas podem travar o PC.</div>
+            </div>
+            <div class="slider-wrap">
+              <input class="slider" type="range" id="threadsSlider" min="1" max="16" value="4" />
+              <span class="slider-value" id="threadsValue">4</span>
+            </div>
           </div>
-          <div class="setting-info">
-            <div class="setting-title">Threads de Processamento</div>
-            <div class="setting-desc">Número de núcleos do processador usados simultaneamente. Valores altos aceleram o processo mas podem travar o PC.</div>
-          </div>
-          <div style="display:flex;align-items:center;gap:12px;width:220px;">
-            <input type="range" class="slider" id="sliderThreads" min="1" max="16" value="4" style="flex:1;">
-            <span class="slider-num" id="threadsValue">4</span>
-          </div>
-        </div>
 
-        <div class="setting-row">
-          <div class="setting-icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-          </div>
-          <div class="setting-info">
-            <div class="setting-title">Ação após finalizar</div>
-            <div class="setting-desc">O que o aplicativo deve fazer automaticamente após completar uma fila de processamento.</div>
-          </div>
-          <div class="select-wrap" style="width: 200px;">
-            <select class="input" id="selectAfterProcess">
-              <option value="open-folder">Abrir pasta de saída</option>
+          <div class="after-action-row">
+            <div class="ico-box" style="background: var(--success-light); color: var(--success);">
+              <span id="icoExternalLink"></span>
+            </div>
+            <div class="body">
+              <div class="title">Ação após finalizar</div>
+              <div class="desc">O que o aplicativo deve fazer automaticamente após completar uma fila de processamento.</div>
+            </div>
+            <select class="select" id="afterActionSelect" style="width: 200px;">
+              <option value="open-output">Abrir pasta de saída</option>
               <option value="notify">Apenas notificar</option>
-              <option value="nothing">Nada</option>
+              <option value="shutdown">Desligar o PC</option>
+              <option value="none">Nada</option>
             </select>
-            <svg class="select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
           </div>
         </div>
-      </div>
-    </div>
+      </section>
 
-    <div class="section">
-      <h3 class="section-title">Sistema</h3>
-      <p class="section-subtitle">Gerencie atualizações e informações do software.</p>
+      <!-- Sistema -->
+      <section class="settings-section">
+        <h2>Sistema</h2>
+        <p class="subtitle">Gerencie atualizações e informações do software.</p>
 
-      <div class="setting-card">
-        <div class="setting-row">
-          <div class="setting-icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        <div class="settings-card">
+          <div class="card-row">
+            <div class="card-row-icon"><span id="icoRefresh"></span></div>
+            <div class="card-row-body">
+              <div class="card-row-title">Buscar Atualizações Automaticamente</div>
+              <div class="card-row-description">
+                Verifica novas versões ao iniciar o aplicativo para garantir melhor performance.
+              </div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="autoUpdateToggle" checked />
+            </label>
           </div>
-          <div class="setting-info">
-            <div class="setting-title">Buscar Atualizações Automaticamente</div>
-            <div class="setting-desc">Verifica novas versões ao iniciar o aplicativo para garantir melhor performance.</div>
+
+          <div class="card-row">
+            <div class="card-row-icon"><span id="icoInfo"></span></div>
+            <div class="card-row-body">
+              <div class="label">VERSÃO ATUAL</div>
+              <div class="value">Redutor de Imagens v1.0.0 (Build 20231024)</div>
+            </div>
+            <button class="btn btn-secondary btn-sm">Verificar Agora</button>
           </div>
-          <label class="toggle">
-            <input type="checkbox" id="toggleAutoUpdate" checked>
-            <span class="toggle-track"></span>
-          </label>
         </div>
+      </section>
 
-        <div class="version-row">
-          <div>
-            <small>VERSÃO ATUAL</small>
-            <strong id="appVersion">Redutor de Imagens v1.0.0</strong>
-          </div>
-          <button class="btn btn-ghost btn-sm" id="btnCheckUpdates">Verificar Agora</button>
+      <footer class="settings-footer">
+        <div class="legal">
+          <p>Desenvolvido para máxima eficiência.</p>
+          <a href="#">Política de Privacidade</a>
         </div>
-      </div>
-    </div>
+        <div class="actions">
+          <button class="btn btn-secondary" id="discardBtn">Descartar</button>
+          <button class="btn btn-primary" id="saveBtn">
+            <span id="icoSave"></span>
+            Salvar Alterações
+          </button>
+        </div>
+      </footer>
+    </main>
 
-    <div class="actions-bar">
-      <div class="actions-info">
-        <span id="actionMessage"></span>
+    <footer class="statusbar">
+      <div class="statusbar-left">
+        <span>ID DA MÁQUINA: SLK1EVVH</span>
       </div>
-      <div style="display:flex;gap:8px;">
-        <button class="btn btn-ghost" id="btnDiscard">Descartar</button>
-        <button class="btn btn-primary" id="btnSave">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-          Salvar Alterações
-        </button>
+      <div class="statusbar-right">
+        <span>LICENÇA ATIVA</span>
+        <span>•</span>
+        <span>SUPORTE PRIORITÁRIO</span>
+        <span>v1.0.0</span>
       </div>
-    </div>
+    </footer>
   </div>
 
   <script src="settings.js"></script>

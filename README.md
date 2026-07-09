@@ -11,10 +11,12 @@
 
 ## ✨ Features
 
+Sistema para windows, MacOS ARM e linux
+
 - 🖼️ **Drag & drop** de imagens direto na janela
-- 📦 **Processamento em lote** multi-thread (até 16 workers)
+- 📦 **Processamento em lote** multi-thread (depende do processador do sistema)
 - 🎯 **7 presets padrão** + presets customizados (pixels ou percentual)
-- 🔄 **3 formatos de saída**: JPEG, PNG, WebP
+- 🔄 **4 formatos de saída**: JPEG, PNG, WebP, JPG
 - 🎚️ **Qualidade configurável** (10–100) com slider live
 - 📐 **Manter proporção** ou forçar dimensões
 - 🗂️ **Destino flexível**: mesma pasta, pasta custom ou sobrescrever
@@ -23,40 +25,8 @@
 - 📊 **Progresso em tempo real** com métricas (economia, velocidade, ETA)
 - 💾 **Configurações persistidas** (presets + prefs) em `userData`
 
----
-
-## 🚀 Quick Start (dev)
-
-```powershell
-# Instalar dependências
-npm install
-
-# Rodar em modo dev
-npm run dev
-
-# Rodar em modo normal
-npm start
-```
-
-> Requer Node 18+ e Windows 10/11.
 
 ---
-
-## 🔧 Instalação do Menu de Contexto
-
-Após rodar o app pelo menos uma vez (pra ele existir no sistema), instale a integração:
-
-```powershell
-npm run install-context-menu
-```
-
-Isso adiciona a opção **"Reduzir com Redutor de Imagens"** ao clicar com o botão direito em arquivos `.jpg`, `.jpeg`, `.png`, `.webp`.
-
-Para remover:
-
-```powershell
-npm run uninstall-context-menu
-```
 
 > A integração é feita por usuário (HKCU), não requer privilégio de administrador.
 
@@ -75,6 +45,7 @@ O instalador sai em `dist/`. Suporta escolha de pasta de instalação, atalho no
 
 ## 🏗️ Arquitetura
 
+REVISE CASO ESSA ARQUITETURA NAO SEJA BOA
 ```
 minimize-parakeet/
 ├── main.js                  # Electron main process (window mgmt + IPC)
@@ -96,7 +67,7 @@ minimize-parakeet/
 ### Decisões técnicas
 
 - **Electron 32** com `contextIsolation: true` + `nodeIntegration: false` → segurança
-- **sharp** pra processamento (rápido, suporta JPEG/PNG/WebP, mantém EXIF orientation)
+- **sharp** pra processamento (rápido, suporta JPEG/PNG/WebP,JPG, mantém EXIF orientation)
 - **Worker threads** pra não travar a UI durante o lote
 - **IPC via `ipcMain.handle` / `ipcRenderer.invoke`** pra comunicação assíncrona
 - **Settings + presets** persistidos em JSON em `app.getPath('userData')`
@@ -110,7 +81,7 @@ minimize-parakeet/
 
 1. Arraste imagens pra janela OU clique em **Abrir arquivos**
 2. Escolha um preset rápido OU defina W×H personalizados
-3. Configure formato (JPEG/PNG/WebP), qualidade, destino
+3. Configure formato (JPEG/PNG/WebP,JPG), qualidade, destino
 4. Clique em **Processar N imagens**
 5. Acompanhe o progresso (métricas em tempo real)
 6. Quando terminar, clique em **Abrir pasta de saída**
@@ -138,9 +109,9 @@ minimize-parakeet/
 | Sobrescrever original | Checkbox off por padrão. Confirmação obrigatória se ativado. |
 | Arquivo de saída já existe | Auto-sufixo `_1`, `_2`, ... pra não colidir |
 | Pasta protegida | Mostra erro "permission denied" com nome do arquivo |
-| Formato não suportado | Ignorado na abertura (filter só mostra JPG/PNG/WebP) |
+| Formato não suportado | Ignorado na abertura (filter só mostra JPG/PNG/WebP,JPEG) |
 | Drag & drop de arquivo não-imagem | Aceito, falha é reportada no item com status "Erro" |
-| 1000+ arquivos | Pool de 4 workers em paralelo, sem travar UI |
+| Limite de 20 arquivos por vez | Pool ajustavel de acordo com o processador, workers em paralelo, sem travar UI |
 
 ---
 

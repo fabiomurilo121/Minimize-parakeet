@@ -1,62 +1,26 @@
 {
-  "name": "redutor-de-imagens",
+  "name": "minimize-parakeet",
   "version": "1.0.0",
-  "description": "App desktop Windows para reduzir tamanho e dimensões de imagens em lote",
+  "description": "Redutor de Imagens - desktop app para reduzir tamanho e dimensoes de imagens em lote",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "dev": "electron . --dev",
-    "pack": "electron-builder --dir",
-    "build": "electron-builder",
-    "build:win": "electron-builder --win",
-    "postinstall": "electron-builder install-app-deps",
-    "install-context-menu": "node scripts/install-context-menu.js",
-    "uninstall-context-menu": "node scripts/uninstall-context-menu.js"
+    "build:win": "electron-builder --win"
   },
-  "keywords": [
-    "electron",
-    "image",
-    "resize",
-    "compress",
-    "windows"
-  ],
-  "author": "Redutor de Imagens",
+  "author": "",
   "license": "MIT",
   "devDependencies": {
-    "electron": "^32.2.5",
-    "electron-builder": "^25.1.8"
+    "electron": "^32.0.0",
+    "electron-builder": "^25.0.0"
   },
   "dependencies": {
-    "sharp": "^0.33.5"
+    "sharp": "^0.33.0"
   },
   "build": {
-    "appId": "com.redutordeimagens.app",
+    "appId": "com.minimize.parakeet",
     "productName": "Redutor de Imagens",
-    "directories": {
-      "output": "dist"
-    },
-    "files": [
-      "main.js",
-      "preload.js",
-      "renderer/**/*",
-      "package.json"
-    ],
     "win": {
-      "target": [
-        {
-          "target": "nsis",
-          "arch": ["x64"]
-        }
-      ],
-      "icon": "build/icon.ico"
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "perMachine": false,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "shortcutName": "Redutor de Imagens"
+      "target": "nsis"
     }
   }
 }

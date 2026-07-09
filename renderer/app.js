@@ -1,860 +1,716 @@
-/**
- * Redutor de Imagens — Renderer Logic
- *
- * Gerencia dois modos:
- *  - Modo Main Window (URL hash padrão): fila + opções + processamento
- *  - Modo Quick Action (hash === '#quick-action'): modal compacto
- */
+/* =============================================================
+   Redutor de Imagens — Renderer (index.html)
+   Lógica: roteamento por hash + fila + presets + processamento
+   ============================================================= */
 
-const api = window.api;
-const isQuickMode = api.isQuickActionMode();
+const api = window.electronAPI || {};
 
-// ════════════════════════════════════════════════════════════════════
-// STATE
-// ════════════════════════════════════════════════════════════════════
-const state = {
-  files: [],                  // [{ path, name, size, width, height, format, status, thumb }]
-  presets: [],
-  settings: null,
-  selectedPresetId: null,
-  outputFolder: '',           // '' = same as input
-  currentJob: null,           // { jobId, startedAt, ... }
-  jobStartTime: 0,
-  jobBytesSaved: 0,
-  jobItemsDone: 0,
+/* =============================================================
+   1) Catálogo de ícones (Lucide-like inline SVG)
+   ============================================================= */
+
+const ICONS = {
+  activity: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>',
+  archive: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>',
+  arrowLeft: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>',
+  barChart: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>',
+  check: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+  checkCircle: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+  clock: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+  crop: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.13 1L6 16a2 2 0 0 0 2 2h15"/><path d="M1 6.13L16 6a2 2 0 0 1 2 2v15"/></svg>',
+  external: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>',
+  externalLink: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>',
+  fileText: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>',
+  folder: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>',
+  folderOpen: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M5 8l4 8h12l-4-8z" fill="currentColor" opacity=".15"/></svg>',
+  folderPlus: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>',
+  grid: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>',
+  help: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+  helpCircle: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+  home: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
+  image: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>',
+  info: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
+  lock: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
+  maximize: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>',
+  monitor: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>',
+  play: '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>',
+  plus: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+  refresh: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>',
+  rotate: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>',
+  save: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>',
+  settings: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+  shield: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+  sliders: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>',
+  trash: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>',
+  x: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+  zap: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
 };
 
-// ════════════════════════════════════════════════════════════════════
-// BOOT
-// ════════════════════════════════════════════════════════════════════
-async function boot() {
-  state.presets = await api.getPresets();
-  state.settings = await api.getSettings();
+const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
-  if (isQuickMode) {
-    initQuickAction();
-  } else {
-    initMain();
-  }
+function setIcon(id, key) {
+  const el = document.getElementById(id);
+  if (el) el.innerHTML = ICONS[key] || '';
 }
 
-document.addEventListener('DOMContentLoaded', boot);
-
-// ════════════════════════════════════════════════════════════════════
-// MAIN WINDOW
-// ════════════════════════════════════════════════════════════════════
-async function initMain() {
-  setupTopbar();
-  setupQueueHandlers();
-  setupOptionsHandlers();
-  setupProcessingOverlay();
-  setupPresetModal();
-  setupProgressListener();
-  setupIncomingFilesListener();
-
-  renderPresetGrid();
-  updateFooter();
-  setStatus('idle', 'Aguardando');
+function paintIcons() {
+  const map = {
+    brandLogo: 'activity',
+    icoArrowLeft: 'arrowLeft',
+    icoFolderOpen: 'folderOpen',
+    icoSettings: 'settings',
+    icoHelp: 'help',
+    icoTrash: 'trash',
+    icoLock: 'lock',
+    icoFolder: 'folder',
+    icoMaximize: 'maximize',
+    icoArchive: 'archive',
+    icoZap: 'zap',
+    icoClock: 'clock',
+    icoBarChart: 'barChart',
+    icoCheck: 'check',
+    icoExternal: 'external',
+    icoFileText: 'fileText',
+    icoHome: 'home',
+    icoInfo: 'info',
+    icoCrop: 'crop',
+    icoX: 'x',
+    icoSliders: 'sliders',
+    icoCheckCircle: 'checkCircle',
+    icoFolder2: 'folder',
+    icoFolderPlus: 'folderPlus',
+    icoPlay: 'play',
+    icoPlus: 'plus',
+    icoX2: 'x',
+    icoX3: 'x',
+    icoCheck2: 'check',
+    icoRotate: 'rotate',
+    icoX4: 'x',
+    icoHelpCircle: 'helpCircle',
+    icoSettingsBig: 'settings',
+    icoGrid: 'grid',
+    icoMonitor: 'monitor',
+    icoShield: 'shield',
+    icoExternalLink: 'externalLink',
+    icoRefresh: 'refresh',
+    icoSave: 'save',
+  };
+  for (const [id, key] of Object.entries(map)) setIcon(id, key);
 }
 
-function setupTopbar() {
-  document.getElementById('btnOpenFiles').addEventListener('click', openFiles);
-  document.getElementById('btnSettings').addEventListener('click', () => api.openSettings());
-  document.getElementById('btnHelp').addEventListener('click', () => {
-    showToast('info', 'Redutor de Imagens v1.0 — arraste imagens, escolha um preset e clique em Processar.');
-  });
-  document.getElementById('btnClearList').addEventListener('click', () => {
-    if (state.files.length === 0) return;
-    if (confirm('Limpar toda a fila de imagens?')) {
-      state.files = [];
-      renderQueue();
-      updateFooter();
-    }
-  });
-  document.getElementById('btnChangeFolder').addEventListener('click', chooseOutputFolder);
-  document.getElementById('btnAdvanced').addEventListener('click', () => api.openSettings());
-  document.getElementById('btnManagePresets').addEventListener('click', openPresetModal);
-  document.getElementById('btnProcess').addEventListener('click', startProcessing);
-  document.getElementById('btnOpenOutput').addEventListener('click', openOutputFolder);
-}
+/* =============================================================
+   2) Estado (em memória — substituir por IPC depois)
+   ============================================================= */
 
-function setupQueueHandlers() {
-  const wrap = document.querySelector('.queue-pane');
+const STATE = {
+  files: [],                 // { id, name, ext, width, height, size, status, thumbnail, processed?, savedBytes? }
+  presetActive: null,        // id do preset selecionado
+  presets: [
+    { id: 'hd',       label: 'HD (1920×1080)',         mode: 'pixels', w: 1920, h: 1080, builtIn: true },
+    { id: 'sd',       label: 'SD (1280×720)',          mode: 'pixels', w: 1280, h: 720,  builtIn: true },
+    { id: 'tablet',   label: 'Tablet (1024×768)',      mode: 'pixels', w: 1024, h: 768,  builtIn: true },
+    { id: 'web',      label: 'Web (800×600)',          mode: 'pixels', w: 800,  h: 600,  builtIn: true },
+    { id: 'thumb',    label: 'Thumbnail (400×300)',    mode: 'pixels', w: 400,  h: 300,  builtIn: true },
+    { id: 'half',     label: 'Reduzir 50%',            mode: 'percent', pct: 50,        builtIn: true },
+    { id: 'qtr',      label: 'Reduzir 75%',            mode: 'percent', pct: 75,        builtIn: true },
+  ],
+  customPresets: [],         // presets adicionados pelo usuário
+  format: 'jpeg',
+  quality: 85,
+  keepAspect: true,
+  width: '',
+  height: '',
+  lockAspect: true,
+  destination: 'same',       // 'same' | 'custom'
+  customDestPath: '',
+  overwriteOriginal: false,
+  saveRenamed: true,
+  selectedPresetForQA: 'sd',
+};
 
-  // Drag & drop
-  ['dragenter', 'dragover'].forEach(ev => {
-    wrap.addEventListener(ev, (e) => {
-      e.preventDefault(); e.stopPropagation();
-      document.body.classList.add('dragging');
-    });
-  });
-  ['dragleave', 'drop'].forEach(ev => {
-    wrap.addEventListener(ev, (e) => {
-      e.preventDefault(); e.stopPropagation();
-      document.body.classList.remove('dragging');
-    });
-  });
-  wrap.addEventListener('drop', async (e) => {
-    const paths = [];
-    for (const f of e.dataTransfer.files) {
-      if (f.path) paths.push(f.path);
-    }
-    if (paths.length) await addFiles(paths);
-  });
+/* =============================================================
+   3) Demo data (substituir por arquivos reais via IPC)
+   ============================================================= */
 
-  // Drop anywhere on window
-  document.body.addEventListener('dragover', (e) => e.preventDefault());
-  document.body.addEventListener('drop', async (e) => {
-    e.preventDefault();
-    const paths = [];
-    for (const f of e.dataTransfer.files) {
-      if (f.path) paths.push(f.path);
-    }
-    if (paths.length) await addFiles(paths);
-  });
-}
-
-function setupOptionsHandlers() {
-  document.getElementById('inputWidth').addEventListener('input', onDimsChange);
-  document.getElementById('inputHeight').addEventListener('input', onDimsChange);
-  document.getElementById('checkKeepRatio').addEventListener('change', () => {
-    // atualiza ícone do lock visualmente (sem mexer em comportamento aqui;
-    // a lógica de razão fica no main)
-  });
-  document.getElementById('checkUpscale').addEventListener('change', () => {});
-
-  document.getElementById('selectFormat').addEventListener('change', (e) => {
-    document.getElementById('formatHint').textContent =
-      e.target.value === 'webp' ? 'Recomendado: WebP' :
-      e.target.value === 'png'  ? 'Sem perda de qualidade' :
-      'Boa compatibilidade';
-  });
-
-  const slider = document.getElementById('sliderQuality');
-  slider.addEventListener('input', () => {
-    document.getElementById('qualityValue').textContent = `${slider.value}%`;
-  });
-
-  document.getElementById('checkOverwrite').addEventListener('change', updateRenameHint);
-  document.getElementById('selectNaming').addEventListener('change', updateRenameHint);
-  updateRenameHint();
-}
-
-function setupIncomingFilesListener() {
-  api.onIncomingFiles(async (files) => {
-    if (!files || files.length === 0) return;
-    await addFiles(files);
-  });
-
-  // Quick action fechou e disparou processamento — sincronizar fila + iniciar
-  api.onSyncQueueAndStart(async (payload) => {
-    if (!payload?.files?.length) return;
-
-    // Substitui a fila atual com os arquivos do quick action
-    state.files = [];
-    await addFiles(payload.files.map(f => f.path || f));
-
-    // Aplica opções do quick action
-    if (payload.options) {
-      if (payload.options.format) {
-        document.getElementById('selectFormat').value = payload.options.format;
-      }
-      if (payload.options.quality) {
-        const s = document.getElementById('sliderQuality');
-        s.value = payload.options.quality;
-        document.getElementById('qualityValue').textContent = `${payload.options.quality}%`;
-      }
-      if (payload.options.keepRatio !== undefined) {
-        document.getElementById('checkKeepRatio').checked = payload.options.keepRatio;
-      }
-      if (payload.options.width && payload.options.height) {
-        document.getElementById('inputWidth').value = payload.options.width;
-        document.getElementById('inputHeight').value = payload.options.height;
-      }
-      if (payload.options.outputDir) {
-        state.outputFolder = payload.options.outputDir;
-        updateOutputFolderDisplay();
-      }
-    }
-
-    // Auto-inicia o processamento
-    setTimeout(() => startProcessing(), 200);
-  });
-}
-
-// ── File loading ─────────────────────────────────────────────────────
-async function openFiles() {
-  const selected = await api.openFileDialog();
-  if (selected.length === 0) return;
-  await addFiles(selected.map(f => f.path));
-}
-
-async function addFiles(paths) {
-  const newItems = [];
-  for (const p of paths) {
-    if (state.files.some(f => f.path === p)) continue; // dedup
-    newItems.push({ path: p, name: basename(p), status: 'loading' });
-  }
-  state.files.push(...newItems);
-  renderQueue();
-  updateFooter();
-
-  // Carrega metadados em paralelo
-  await Promise.all(newItems.map(async (item) => {
-    const info = await api.readImageInfo(item.path);
-    if (info.ok) {
-      Object.assign(item, {
-        size: info.size,
-        width: info.width,
-        height: info.height,
-        format: info.format,
-        status: 'pending',
-      });
-    } else {
-      item.status = 'error';
-      item.error = info.error;
-    }
-    // Thumbnail
-    const thumb = await api.readThumbnail(item.path, 96);
-    if (thumb.ok) item.thumb = thumb.dataUrl;
-    renderQueue();
-    updateFooter();
+function loadDemoFiles() {
+  const demo = [
+    { name: 'ferias_verao_2024.jpg',         ext: 'jpg',  w: 4032, h: 3024, size: 4.2 * 1024 * 1024 },
+    { name: 'projeto_final_render.png',      ext: 'png',  w: 1920, h: 1080, size: 12.5 * 1024 * 1024 },
+    { name: 'documento_escaneado.jpeg',      ext: 'jpeg', w: 2480, h: 3508, size: 1.8 * 1024 * 1024 },
+    { name: 'foto_perfil_v2.webp',           ext: 'webp', w: 1000, h: 1000, size: 450 * 1024 },
+    { name: 'paisagem_montanha.jpg',         ext: 'jpg',  w: 6000, h: 4000, size: 18.2 * 1024 * 1024 },
+    { name: 'logo_empresa_vetor.png',        ext: 'png',  w: 512,  h: 512,  size: 85 * 1024 },
+    { name: 'casamento_ana_bruno.jpg',       ext: 'jpg',  w: 3000, h: 2000, size: 5.6 * 1024 * 1024 },
+    { name: 'screenshot_desktop.png',        ext: 'png',  w: 1440, h: 900,  size: 1.2 * 1024 * 1024 },
+  ];
+  STATE.files = demo.map((f, i) => ({
+    id: `f${i + 1}`,
+    ...f,
+    status: 'pending',
+    thumbnail: `https://picsum.photos/seed/${i + 1}/96/96`,
   }));
 }
 
-function basename(p) {
-  return p.split(/[\\/]/).pop();
+/* =============================================================
+   4) Helpers
+   ============================================================= */
+
+function formatBytes(bytes) {
+  if (bytes >= 1024 * 1024) return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+  if (bytes >= 1024) return (bytes / 1024).toFixed(0) + ' KB';
+  return bytes + ' B';
 }
 
-// ── Queue rendering ──────────────────────────────────────────────────
-function renderQueue() {
-  const empty = document.getElementById('emptyState');
-  const wrap = document.getElementById('queueTableWrap');
-  const list = document.getElementById('queueList');
+function formatTime(secs) {
+  secs = Math.max(0, Math.round(secs));
+  const m = Math.floor(secs / 60).toString().padStart(2, '0');
+  const s = (secs % 60).toString().padStart(2, '0');
+  return `${m}:${s}`;
+}
 
-  if (state.files.length === 0) {
-    empty.classList.remove('hidden');
-    wrap.classList.add('hidden');
+function totalSelectionSize() {
+  return STATE.files.reduce((acc, f) => acc + f.size, 0);
+}
+
+function updateStatusbar() {
+  const count = STATE.files.length;
+  const size = totalSelectionSize();
+  $('#statusbarSelection').textContent =
+    `${count} ${count === 1 ? 'imagem selecionada' : 'imagens selecionadas'} (${formatBytes(size)})`;
+}
+
+/* =============================================================
+   5) Render: Fila
+   ============================================================= */
+
+function renderQueue() {
+  const body = $('#queueBody');
+  body.innerHTML = '';
+
+  if (STATE.files.length === 0) {
+    body.innerHTML = `
+      <div class="empty">
+        <div class="empty-icon">${ICONS.image}</div>
+        <h3>Nenhuma imagem adicionada</h3>
+        <p>Arraste arquivos aqui ou clique em <b>Abrir Arquivos</b>.</p>
+      </div>`;
     return;
   }
 
-  empty.classList.add('hidden');
-  wrap.classList.remove('hidden');
-
-  list.innerHTML = '';
-  for (let i = 0; i < state.files.length; i++) {
-    const f = state.files[i];
+  for (const f of STATE.files) {
     const row = document.createElement('div');
     row.className = 'queue-row';
-
-    const thumbHtml = f.thumb
-      ? `<img src="${f.thumb}" alt="">`
-      : `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`;
-
-    const dims = f.width ? `${f.width}×${f.height}` : '—';
-    const statusLabel = {
-      loading: 'Carregando...',
-      pending: 'Pendente',
-      processing: 'Processando',
-      done: 'Concluído',
-      error: 'Erro',
-    }[f.status] || f.status;
-
     row.innerHTML = `
-      <div class="queue-thumb">${thumbHtml}</div>
-      <div class="queue-name">${escapeHtml(f.name)}<small>${(f.format || '').toUpperCase()}</small></div>
-      <div class="queue-dims">${dims}<small>Original</small></div>
-      <div class="queue-size">${f.size ? fmtBytes(f.size) : '—'}</div>
-      <div><span class="status-badge ${f.status}">${statusLabel}</span></div>
-      <div class="queue-actions">
-        <button title="Visualizar" data-action="preview" data-i="${i}">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-        </button>
-        <button class="remove-btn" title="Remover" data-action="remove" data-i="${i}">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg>
-        </button>
+      <div class="queue-thumb" style="background-image: url('${f.thumbnail}')"></div>
+      <div class="queue-name">
+        <span class="filename">${f.name}</span>
+        <span class="ext">${f.ext}</span>
       </div>
+      <div class="queue-dim">
+        <span>${f.w}×${f.h}</span>
+        <small>Original</small>
+      </div>
+      <div>${formatBytes(f.size)}</div>
+      <div><span class="badge badge-pending">Pendente</span></div>
     `;
-    list.appendChild(row);
+    body.appendChild(row);
   }
-
-  list.querySelectorAll('[data-action="remove"]').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const i = parseInt(e.currentTarget.dataset.i, 10);
-      state.files.splice(i, 1);
-      renderQueue();
-      updateFooter();
-    });
-  });
-  list.querySelectorAll('[data-action="preview"]').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const i = parseInt(e.currentTarget.dataset.i, 10);
-      api.openInExplorer(state.files[i].path);
-    });
-  });
 }
 
-// ── Presets ──────────────────────────────────────────────────────────
-function renderPresetGrid() {
-  const grid = document.getElementById('presetGrid');
+/* =============================================================
+   6) Render: Presets
+   ============================================================= */
+
+function renderPresets() {
+  const grid = $('#presetGrid');
   grid.innerHTML = '';
-  for (const p of state.presets) {
+
+  for (const p of STATE.presets) {
     const btn = document.createElement('button');
-    btn.className = 'preset-btn';
-    if (state.selectedPresetId === p.id) btn.classList.add('active');
-    btn.textContent = presetLabel(p);
-    btn.dataset.id = p.id;
-    btn.addEventListener('click', () => applyPreset(p));
+    btn.className = 'preset-btn' + (STATE.presetActive === p.id ? ' active' : '');
+    btn.textContent = p.label;
+    btn.dataset.presetId = p.id;
+    btn.addEventListener('click', () => selectPreset(p.id));
+    grid.appendChild(btn);
+  }
+
+  // Manage button
+  const manage = document.createElement('button');
+  manage.className = 'preset-btn manage';
+  manage.textContent = 'Gerenciar Presets...';
+  manage.addEventListener('click', openPresetManager);
+  grid.appendChild(manage);
+}
+
+function renderQAPresets() {
+  const grid = $('#qaPresetGrid');
+  grid.innerHTML = '';
+  const all = [...STATE.presets, ...STATE.customPresets].slice(0, 6);
+  for (const p of all) {
+    const btn = document.createElement('button');
+    btn.className = 'preset-btn' + (STATE.selectedPresetForQA === p.id ? ' active' : '');
+    btn.textContent = p.label.replace(/\s*\(\d+×\d+\)/, '').replace(/\s*\d+%\s*/, '');
+    btn.dataset.presetId = p.id;
+    btn.addEventListener('click', () => {
+      STATE.selectedPresetForQA = p.id;
+      renderQAPresets();
+    });
     grid.appendChild(btn);
   }
 }
 
-function presetLabel(p) {
-  if (p.type === 'percent') return `${p.name.replace('Reduzir ', '').replace('Reduzir ', '')}`;
-  return p.name;
-}
+function renderCustomPresetList() {
+  const list = $('#customPresetList');
+  list.innerHTML = '';
 
-function applyPreset(p) {
-  state.selectedPresetId = p.id;
-  document.getElementById('checkKeepRatio').checked = p.keepRatio !== false;
-
-  if (p.type === 'percent') {
-    document.getElementById('inputWidth').value = '';
-    document.getElementById('inputHeight').value = '';
-    document.getElementById('inputWidth').placeholder = `${p.percent}%`;
-    document.getElementById('inputHeight').placeholder = `${p.percent}%`;
-    showToast('info', `Preset "${p.name}" — redimensionará para ${p.percent}% do tamanho original.`);
-  } else {
-    document.getElementById('inputWidth').value = p.width;
-    document.getElementById('inputHeight').value = p.height;
-  }
-  renderPresetGrid();
-}
-
-function onDimsChange() {
-  // Mudou dimensões manualmente → desativa preset ativo
-  if (state.selectedPresetId) {
-    state.selectedPresetId = null;
-    renderPresetGrid();
-  }
-}
-
-// ── Output folder ────────────────────────────────────────────────────
-async function chooseOutputFolder() {
-  const folder = await api.openFolderDialog();
-  if (!folder) return;
-  state.outputFolder = folder;
-  updateOutputFolderDisplay();
-}
-
-function updateOutputFolderDisplay() {
-  if (state.outputFolder) {
-    document.getElementById('outputFolderName').textContent = 'Pasta Customizada';
-    document.getElementById('outputFolderPath').textContent = state.outputFolder;
-  } else {
-    document.getElementById('outputFolderName').textContent = 'Pasta Atual';
-    document.getElementById('outputFolderPath').textContent = 'Mesma pasta dos arquivos originais';
-  }
-}
-
-function updateRenameHint() {
-  const naming = document.getElementById('selectNaming').value;
-  const hints = {
-    resized: 'Ex: ferias_verao_resized.jpg',
-    dimension: 'Ex: ferias_verao_1920x1080.jpg',
-    keep: '⚠️ Mesmo nome do original (risco de sobrescrever)',
-  };
-  document.getElementById('renameHint').textContent = hints[naming] || '';
-}
-
-function openOutputFolder() {
-  if (state.outputFolder) {
-    api.openInExplorer(state.outputFolder);
-  } else if (state.files.length > 0) {
-    api.openInExplorer(state.files[0].path);
-  } else {
-    showToast('warn', 'Nenhum arquivo processado ainda.');
-  }
-}
-
-// ── Footer / Status ──────────────────────────────────────────────────
-function updateFooter() {
-  const count = state.files.length;
-  const totalSize = state.files.reduce((s, f) => s + (f.size || 0), 0);
-  document.getElementById('footerCount').textContent =
-    `${count} ${count === 1 ? 'imagem selecionada' : 'imagens selecionadas'}`;
-  document.getElementById('footerSize').textContent = totalSize > 0 ? `(${fmtBytes(totalSize)})` : '';
-  document.getElementById('processBtnLabel').textContent = `Processar ${count} ${count === 1 ? 'imagem' : 'imagens'}`;
-
-  const btn = document.getElementById('btnProcess');
-  btn.disabled = count === 0;
-}
-
-function setStatus(kind, label) {
-  const pill = document.getElementById('statusPill');
-  const dot = pill.querySelector('.status-dot');
-  pill.lastChild.textContent = ` ${label}`;
-  dot.className = `status-dot status-dot-${kind}`;
-}
-
-// ── Processing ───────────────────────────────────────────────────────
-function setupProcessingOverlay() {
-  document.getElementById('btnCancelProcess').addEventListener('click', async () => {
-    if (state.currentJob) {
-      await api.cancelProcess(state.currentJob.jobId);
-      hideProcessing();
-      showToast('warn', 'Processamento cancelado.');
-    }
-  });
-  document.getElementById('btnRunInBg').addEventListener('click', () => {
-    hideProcessing();
-    showToast('info', 'Continuando em segundo plano. Acompanhe pela barra de tarefas.');
-  });
-}
-
-function setupProgressListener() {
-  api.onProcessProgress(handleProgressMessage);
-}
-
-async function startProcessing() {
-  if (state.files.length === 0) return;
-  const validFiles = state.files.filter(f => f.status !== 'error' && f.status !== 'loading');
-  if (validFiles.length === 0) {
-    showToast('warn', 'Nenhum arquivo válido para processar.');
+  if (STATE.customPresets.length === 0) {
+    list.innerHTML = `<p class="text-muted" style="text-align:center; padding: var(--sp-4);">Você ainda não criou presets customizados.</p>`;
     return;
   }
 
-  // Confirma sobrescrita
-  if (document.getElementById('checkOverwrite').checked) {
-    if (!confirm('Sobrescrever os arquivos originais é uma ação irreversível. Continuar?')) return;
-  }
-
-  const options = collectOptions();
-  const jobId = `job_${Date.now()}`;
-  state.currentJob = { jobId, total: validFiles.length };
-  state.jobStartTime = Date.now();
-  state.jobBytesSaved = 0;
-  state.jobItemsDone = 0;
-
-  showProcessing(validFiles.length);
-  setStatus('busy', 'Processando');
-
-  try {
-    await api.startProcess({
-      jobId,
-      files: validFiles.map(f => ({ path: f.path })),
-      options,
-    });
-  } catch (err) {
-    showToast('error', `Erro: ${err.message}`);
-    hideProcessing();
-  }
-}
-
-function collectOptions() {
-  const w = parseInt(document.getElementById('inputWidth').value, 10) || null;
-  const h = parseInt(document.getElementById('inputHeight').value, 10) || null;
-  const sel = state.presets.find(p => p.id === state.selectedPresetId);
-  const isPercent = sel && sel.type === 'percent';
-
-  return {
-    width: isPercent ? null : w,
-    height: isPercent ? null : h,
-    percent: isPercent ? sel.percent : null,
-    presetType: isPercent ? 'percent' : 'pixels',
-    keepRatio: document.getElementById('checkKeepRatio').checked,
-    upscale: document.getElementById('checkUpscale').checked,
-    format: document.getElementById('selectFormat').value,
-    quality: parseInt(document.getElementById('sliderQuality').value, 10),
-    outputDir: state.outputFolder,
-    overwriteOriginal: document.getElementById('checkOverwrite').checked,
-    namingMode: document.getElementById('selectNaming').value,
-    preserveFolderStructure: false,
-    maxParallel: state.settings?.threads > 0 ? state.settings.threads : 4,
-  };
-}
-
-function showProcessing(total) {
-  document.getElementById('processingOverlay').classList.remove('hidden');
-  document.getElementById('processingSubtitle').textContent = `Processando 0 de ${total} imagens`;
-  document.getElementById('processingPercent').textContent = '0%';
-  document.getElementById('progressFill').style.width = '0%';
-  document.getElementById('metricSaved').textContent = '0 KB';
-  document.getElementById('metricSpeed').textContent = '— img/s';
-  document.getElementById('metricRemaining').textContent = '—';
-  document.getElementById('metricRate').textContent = '—';
-}
-
-function hideProcessing() {
-  document.getElementById('processingOverlay').classList.add('hidden');
-  state.currentJob = null;
-}
-
-function handleProgressMessage(msg) {
-  if (!state.currentJob || msg.jobId !== state.currentJob.jobId) return;
-
-  switch (msg.type) {
-    case 'item:start': {
-      // Marca arquivo como processando
-      const file = state.files.find(f => f.path === msg.file);
-      if (file) { file.status = 'processing'; renderQueue(); }
-      document.getElementById('processingSubtitle').textContent =
-        `Processando item ${msg.index + 1} de ${msg.total}`;
-      break;
-    }
-
-    case 'item:done': {
-      const file = state.files.find(f => f.path === msg.file);
-      if (file) {
-        file.status = 'done';
-        file.newSize = msg.newSize;
-        file.newDims = msg.newDims;
-      }
-      state.jobBytesSaved += (msg.origSize - msg.newSize);
-      state.jobItemsDone++;
-      renderQueue();
-      break;
-    }
-
-    case 'item:error': {
-      const file = state.files.find(f => f.path === msg.file);
-      if (file) { file.status = 'error'; renderQueue(); }
-      showToast('error', `Falha em ${basename(msg.file)}: ${msg.error}`);
-      state.jobItemsDone++;
-      break;
-    }
-
-    case 'job:progress': {
-      const pct = Math.round((msg.completed / msg.total) * 100);
-      document.getElementById('progressFill').style.width = `${pct}%`;
-      document.getElementById('processingPercent').textContent = `${pct}%`;
-
-      const elapsed = (Date.now() - state.jobStartTime) / 1000;
-      const speed = msg.completed / elapsed;
-      const remaining = (msg.total - msg.completed) / speed;
-      document.getElementById('metricSpeed').textContent = `${speed.toFixed(1)} img/s`;
-      document.getElementById('metricRemaining').textContent = remaining > 0 ? fmtTime(remaining) : '—';
-      document.getElementById('metricSaved').textContent = fmtBytes(state.jobBytesSaved);
-      break;
-    }
-
-    case 'job:done': {
-      const pct = Math.round((msg.completed / msg.total) * 100);
-      document.getElementById('progressFill').style.width = `${pct}%`;
-      document.getElementById('processingPercent').textContent = '100%';
-
-      const savedMB = state.jobBytesSaved;
-      const reduction = savedMB > 0 ? ((savedMB / state.jobBytesSaved) * 100).toFixed(1) : 0;
-      document.getElementById('metricRate').textContent = `${reduction}%`;
-
-      setTimeout(() => {
-        hideProcessing();
-        setStatus('idle', 'Pronto');
-        const failed = msg.failed;
-        if (failed > 0) {
-          showToast('warn', `${msg.completed} processadas, ${failed} com erro.`);
-        } else {
-          showToast('success', `${msg.completed} imagens processadas — ${fmtBytes(state.jobBytesSaved)} economizados.`);
-        }
-      }, 600);
-      break;
-    }
-
-    case 'error':
-    case 'job:error': {
-      showToast('error', msg.message || 'Erro desconhecido no processamento.');
-      hideProcessing();
-      setStatus('error', 'Erro');
-      break;
-    }
-  }
-}
-
-// ── Preset modal ──────────────────────────────────────────────────────
-function setupPresetModal() {
-  document.querySelectorAll('[data-close-modal]').forEach(b => {
-    b.addEventListener('click', closePresetModal);
-  });
-  document.getElementById('btnPresetCancel').addEventListener('click', resetPresetForm);
-  document.getElementById('btnPresetSave').addEventListener('click', savePresetFromForm);
-  document.getElementById('btnPresetDone').addEventListener('click', closePresetModal);
-  document.getElementById('btnRestorePresets').addEventListener('click', restoreDefaultPresets);
-
-  document.getElementById('presetMode').addEventListener('change', (e) => {
-    const isPct = e.target.value === 'percent';
-    document.getElementById('presetPixelsGroup').classList.toggle('hidden', isPct);
-    document.getElementById('presetPercentGroup').classList.toggle('hidden', !isPct);
-  });
-  document.getElementById('presetPercent').addEventListener('input', (e) => {
-    document.getElementById('presetPercentValue').textContent = `${e.target.value}%`;
-  });
-}
-
-async function openPresetModal() {
-  document.getElementById('presetModal').classList.remove('hidden');
-  renderPresetList();
-}
-
-function closePresetModal() {
-  document.getElementById('presetModal').classList.add('hidden');
-  resetPresetForm();
-}
-
-function renderPresetList() {
-  const list = document.getElementById('presetList');
-  list.innerHTML = '';
-  document.getElementById('presetCount').textContent = `${state.presets.length} itens`;
-
-  for (const p of state.presets) {
+  for (const p of STATE.customPresets) {
     const item = document.createElement('div');
-    item.className = 'preset-item';
-    const tagText = p.type === 'percent' ? '%' : 'Fixo';
-    const metaText = p.type === 'percent'
-      ? `${p.percent}% · ${p.keepRatio ? 'Manter Proporção' : 'Forçar'}`
-      : `${p.width} × ${p.height} · ${p.keepRatio ? 'Manter Proporção' : 'Forçar'}`;
+    item.className = 'preset-list-item';
     item.innerHTML = `
-      <div class="preset-item-info">
-        <div class="preset-item-name">${escapeHtml(p.name)} <span class="tag-mini">${tagText}</span></div>
-        <div class="preset-item-meta">${metaText}</div>
+      <div>
+        <div class="name">${p.label} <span class="badge badge-fixed">Fixo</span></div>
+        <div class="meta">
+          <span>${ICONS.maximize} ${p.mode === 'pixels' ? `${p.w} × ${p.h}` : p.pct + '%'}</span>
+          <span>${ICONS.check} Manter Proporção</span>
+        </div>
       </div>
-      <div class="preset-item-actions">
-        <button data-edit="${p.id}">Editar</button>
-        <button class="remove" data-remove="${p.id}">Remover</button>
+      <div class="actions">
+        <button class="btn-icon" title="Editar">${ICONS.settings}</button>
+        <button class="btn-icon" title="Remover">${ICONS.trash}</button>
       </div>
     `;
     list.appendChild(item);
   }
+}
 
-  list.querySelectorAll('[data-remove]').forEach(b => {
-    b.addEventListener('click', async (e) => {
-      const id = e.target.dataset.remove;
-      if (!confirm('Remover este preset?')) return;
-      state.presets = state.presets.filter(p => p.id !== id);
-      await api.setPresets(state.presets);
-      renderPresetList();
-      renderPresetGrid();
+function selectPreset(id) {
+  STATE.presetActive = id;
+  const p = STATE.presets.find(x => x.id === id);
+  if (p) {
+    if (p.mode === 'pixels') {
+      $('#widthInput').value = p.w;
+      $('#heightInput').value = p.h;
+    } else if (p.mode === 'percent') {
+      // deixa em branco — a lógica de processamento calcula a partir do original
+      $('#widthInput').value = '';
+      $('#heightInput').value = '';
+    }
+  }
+  renderPresets();
+  updateProcessBtn();
+}
+
+/* =============================================================
+   7) Render: Processamento (lista + métricas + logs)
+   ============================================================= */
+
+function renderProcessList() {
+  const list = $('#processList');
+  list.innerHTML = '';
+  STATE.files.forEach((f, idx) => {
+    const item = document.createElement('div');
+    item.className = 'process-item';
+    const status = f.status;
+    let statusHtml = '';
+    if (status === 'pending') {
+      statusHtml = `
+        <span class="label">Aguardando</span>
+        <div class="process-item-progress"><div style="width: 0%"></div></div>`;
+    } else if (status === 'processing') {
+      const pct = f.progress || 0;
+      statusHtml = `
+        <span class="label">Processando...</span>
+        <div class="process-item-progress"><div style="width: ${pct}%"></div></div>
+        <span class="pct">${pct}%</span>`;
+    } else if (status === 'done') {
+      const pct = f.savedPct || 0;
+      statusHtml = `
+        <span class="label">Concluído</span>
+        <div class="process-item-progress complete"><div style="width: 100%"></div></div>
+        <span class="badge-percent">−${pct}%</span>`;
+    } else if (status === 'error') {
+      statusHtml = `<span class="label text-muted">Erro</span>`;
+    }
+    item.innerHTML = `
+      <div class="process-item-icon">${ICONS.image}</div>
+      <div class="process-item-body">
+        <div class="process-item-name">${f.name}</div>
+        <div class="process-item-size">${formatBytes(f.size)}</div>
+      </div>
+      <div class="process-item-status">${statusHtml}</div>
+    `;
+    list.appendChild(item);
+  });
+}
+
+function pushLog(msg, isCurrent = false) {
+  const stream = $('#logStream');
+  const line = document.createElement('div');
+  line.className = 'log-line' + (isCurrent ? ' cur' : '');
+  const ts = new Date().toLocaleTimeString('pt-BR', { hour12: false });
+  line.innerHTML = `<span class="ts">[${ts}]</span> ${msg}`;
+  stream.appendChild(line);
+  stream.scrollTop = stream.scrollHeight;
+}
+
+/* =============================================================
+   8) Processar (simulação)
+   ============================================================= */
+
+function updateProcessBtn() {
+  const n = STATE.files.length;
+  const btn = $('#processBtn');
+  const lbl = $('#processBtnLabel');
+  btn.disabled = n === 0;
+  lbl.textContent = `Processar ${n} ${n === 1 ? 'imagem' : 'imagens'}`;
+}
+
+async function startProcessing() {
+  if (STATE.files.length === 0) return;
+  // Switch view
+  location.hash = '#/processing';
+
+  const n = STATE.files.length;
+  $('#processingSubtitle').textContent = `Processando item 1 de ${n} arquivos selecionados.`;
+  $('#processingCounter').textContent = `0/${n}`;
+  $('#metricSaved').textContent = '0 MB';
+  $('#metricSpeed').textContent = '0 img/s';
+  $('#metricEta').textContent = '00:00';
+  $('#metricRate').textContent = '0%';
+  $('#globalProgress').style.width = '0%';
+  $('#processingPercent').textContent = '0%';
+  $('#taskDone').classList.add('hidden');
+  $('#logStream').innerHTML = '';
+
+  pushLog('Iniciando motor de compressão MozJPEG...', true);
+
+  let done = 0;
+  let totalSaved = 0;
+  let totalOriginal = STATE.files.reduce((acc, f) => acc + f.size, 0);
+  const startTime = Date.now();
+
+  for (let i = 0; i < n; i++) {
+    const f = STATE.files[i];
+    f.status = 'processing';
+    f.progress = 0;
+    renderProcessList();
+    pushLog(`${f.name}: Otimização iniciada.`, true);
+
+    // Simula progresso em steps
+    for (let p = 0; p <= 100; p += 20) {
+      f.progress = Math.min(p, 100);
+      renderProcessList();
+      await sleep(120);
+    }
+
+    // Simula compressão
+    const saved = f.size * (0.3 + Math.random() * 0.5);
+    f.status = 'done';
+    f.savedPct = Math.round((saved / f.size) * 100);
+    f.processedSize = f.size - saved;
+    totalSaved += saved;
+    done++;
+    renderProcessList();
+    pushLog(`${f.name}: Redimensionado com sucesso. (−${f.savedPct}%)`);
+    $('#processingCounter').textContent = `${done}/${n}`;
+    const pct = Math.round((done / n) * 100);
+    $('#globalProgress').style.width = pct + '%';
+    $('#processingPercent').textContent = pct + '%';
+    $('#processingSubtitle').textContent = `Processando item ${Math.min(i + 2, n)} de ${n} arquivos selecionados.`;
+
+    // métricas
+    const elapsed = (Date.now() - startTime) / 1000;
+    const speed = (done / elapsed).toFixed(1);
+    const eta = (n - done) * (elapsed / done);
+    $('#metricSaved').textContent = formatBytes(totalSaved);
+    $('#metricSpeed').textContent = `${speed} img/s`;
+    $('#metricEta').textContent = formatTime(eta);
+    $('#metricRate').textContent = `${Math.round((totalSaved / totalOriginal) * 100)}%`;
+  }
+
+  pushLog('Tarefa concluída.', true);
+  $('#taskDone').classList.remove('hidden');
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+/* =============================================================
+   9) Modal helpers
+   ============================================================= */
+
+function openModal(id) {
+  const m = document.getElementById(id);
+  if (m) m.classList.remove('hidden');
+}
+function closeModal(id) {
+  const m = document.getElementById(id);
+  if (m) m.classList.add('hidden');
+}
+
+function openPresetManager() { renderCustomPresetList(); openModal('presetManagerModal'); }
+function openQuickAction()   { renderQAPresets(); openModal('quickActionModal'); }
+function openHelp()          { openModal('helpModal'); }
+
+/* =============================================================
+   10) Hash routing
+   ============================================================= */
+
+function route() {
+  const hash = location.hash || '#/';
+  const main = $('#view-main');
+  const proc = $('#view-processing');
+  const back = $('#backLink');
+
+  if (hash.startsWith('#/processing')) {
+    main.classList.remove('active');
+    proc.classList.add('active');
+    back.classList.remove('hidden');
+  } else if (hash.startsWith('#/settings')) {
+    window.location.href = 'settings.html';
+    return;
+  } else if (hash.startsWith('#/quick-action')) {
+    openQuickAction();
+    // não muda a view principal
+  } else {
+    main.classList.add('active');
+    proc.classList.remove('active');
+    back.classList.add('hidden');
+  }
+}
+
+/* =============================================================
+   11) Listeners
+   ============================================================= */
+
+function attachListeners() {
+  // Brand / back
+  $('#backLink').addEventListener('click', (e) => {
+    e.preventDefault();
+    location.hash = '#/';
+  });
+
+  // Topbar
+  $('#openFilesBtn').addEventListener('click', () => {
+    if (api.openFilesDialog) api.openFilesDialog();
+    else alert('IPC openFilesDialog não conectado (demo).');
+  });
+  $('#settingsBtn').addEventListener('click', () => { location.href = 'settings.html'; });
+  $('#helpBtn').addEventListener('click', openHelp);
+
+  // Clear list
+  $('#clearBtn').addEventListener('click', () => {
+    STATE.files = [];
+    renderQueue();
+    updateProcessBtn();
+    updateStatusbar();
+  });
+
+  // Width/height inputs
+  $('#widthInput').addEventListener('input', () => {
+    STATE.width = $('#widthInput').value;
+    STATE.presetActive = null;
+    renderPresets();
+  });
+  $('#heightInput').addEventListener('input', () => {
+    STATE.height = $('#heightInput').value;
+    STATE.presetActive = null;
+    renderPresets();
+  });
+  $('#keepAspect').addEventListener('change', e => STATE.keepAspect = e.target.checked);
+  $('#lockAspectBtn').addEventListener('click', () => {
+    STATE.lockAspect = !STATE.lockAspect;
+    $('#lockAspectBtn').style.color = STATE.lockAspect ? 'var(--primary)' : 'var(--text-muted)';
+  });
+
+  // Format & quality
+  $('#formatSelect').addEventListener('change', e => {
+    STATE.format = e.target.value;
+    const rec = { jpeg: 'JPEG', png: 'PNG', webp: 'WebP', jpg: 'JPG' }[e.target.value];
+    $('#formatRecommended').textContent = `Recomendado: ${rec}`;
+  });
+  $('#qualitySlider').addEventListener('input', e => {
+    STATE.quality = +e.target.value;
+    $('#qualityValue').textContent = STATE.quality + '%';
+    const pct = ((STATE.quality - 10) / 90) * 100;
+    e.target.style.backgroundSize = pct + '% 100%';
+  });
+  // init slider fill
+  const initSlider = $('#qualitySlider');
+  initSlider.style.backgroundSize = ((STATE.quality - 10) / 90) * 100 + '% 100%';
+
+  // Destination
+  $('#changeDestBtn').addEventListener('click', () => {
+    if (api.pickFolder) api.pickFolder().then(p => {
+      if (p) {
+        STATE.destination = 'custom';
+        STATE.customDestPath = p;
+        $('#destSamePath').textContent = p;
+      }
     });
   });
-  list.querySelectorAll('[data-edit]').forEach(b => {
-    b.addEventListener('click', (e) => {
-      const id = e.target.dataset.edit;
-      const p = state.presets.find(x => x.id === id);
-      if (p) loadPresetIntoForm(p);
-    });
-  });
-}
-
-function loadPresetIntoForm(p) {
-  document.getElementById('presetFormTitle').textContent = `Editar: ${p.name}`;
-  document.getElementById('presetName').value = p.name;
-  document.getElementById('presetMode').value = p.type;
-  document.getElementById('presetMode').dispatchEvent(new Event('change'));
-  document.getElementById('presetKeepRatio').checked = p.keepRatio !== false;
-  if (p.type === 'percent') {
-    document.getElementById('presetPercent').value = p.percent;
-    document.getElementById('presetPercentValue').textContent = `${p.percent}%`;
-  } else {
-    document.getElementById('presetW').value = p.width;
-    document.getElementById('presetH').value = p.height;
-  }
-  document.getElementById('btnPresetSave').dataset.editing = p.id;
-}
-
-function resetPresetForm() {
-  document.getElementById('presetFormTitle').textContent = 'Novo Preset Customizado';
-  document.getElementById('presetName').value = '';
-  document.getElementById('presetMode').value = 'pixels';
-  document.getElementById('presetMode').dispatchEvent(new Event('change'));
-  document.getElementById('presetW').value = '';
-  document.getElementById('presetH').value = '';
-  document.getElementById('presetKeepRatio').checked = true;
-  delete document.getElementById('btnPresetSave').dataset.editing;
-}
-
-async function savePresetFromForm() {
-  const name = document.getElementById('presetName').value.trim();
-  const mode = document.getElementById('presetMode').value;
-  const keepRatio = document.getElementById('presetKeepRatio').checked;
-  const editingId = document.getElementById('btnPresetSave').dataset.editing;
-
-  if (!name) { showToast('warn', 'Dê um nome ao preset.'); return; }
-
-  const preset = {
-    id: editingId || `custom_${Date.now()}`,
-    name,
-    type: mode,
-    keepRatio,
-  };
-  if (mode === 'percent') {
-    preset.percent = parseInt(document.getElementById('presetPercent').value, 10);
-  } else {
-    const w = parseInt(document.getElementById('presetW').value, 10);
-    const h = parseInt(document.getElementById('presetH').value, 10);
-    if (!w || !h) { showToast('warn', 'Informe largura e altura.'); return; }
-    preset.width = w;
-    preset.height = h;
-  }
-
-  if (editingId) {
-    const i = state.presets.findIndex(p => p.id === editingId);
-    if (i >= 0) state.presets[i] = preset;
-  } else {
-    state.presets.push(preset);
-  }
-  await api.setPresets(state.presets);
-  renderPresetList();
-  renderPresetGrid();
-  resetPresetForm();
-  showToast('success', `Preset "${name}" salvo.`);
-}
-
-async function restoreDefaultPresets() {
-  if (!confirm('Restaurar os 7 presets padrão? Seus customizados serão perdidos.')) return;
-  state.presets = await api.setPresets([
-    { id: 'hd',      name: 'HD (1920×1080)',  type: 'pixels', width: 1920, height: 1080, keepRatio: true },
-    { id: 'sd',      name: 'SD (1280×720)',   type: 'pixels', width: 1280, height: 720,  keepRatio: true },
-    { id: 'tablet',  name: 'Tablet (1024×768)', type: 'pixels', width: 1024, height: 768, keepRatio: true },
-    { id: 'web',     name: 'Web (800×600)',   type: 'pixels', width: 800,  height: 600,  keepRatio: true },
-    { id: 'thumb',   name: 'Thumbnail (400×300)', type: 'pixels', width: 400, height: 300, keepRatio: true },
-    { id: 'half',    name: 'Reduzir 50%',     type: 'percent', percent: 50, keepRatio: true },
-    { id: 'quarter', name: 'Reduzir 75%',     type: 'percent', percent: 75, keepRatio: true },
-  ]);
-  renderPresetList();
-  renderPresetGrid();
-  showToast('success', 'Presets padrão restaurados.');
-}
-
-// ── Toast ────────────────────────────────────────────────────────────
-function showToast(kind, msg) {
-  const c = document.getElementById('toastContainer');
-  const t = document.createElement('div');
-  t.className = `toast ${kind}`;
-  t.textContent = msg;
-  c.appendChild(t);
-  setTimeout(() => t.remove(), 4500);
-}
-
-// ── Utils ────────────────────────────────────────────────────────────
-function fmtBytes(b) {
-  if (!b || b < 0) return '0 KB';
-  if (b < 1024) return `${b} B`;
-  if (b < 1024 * 1024) return `${(b / 1024).toFixed(1)} KB`;
-  return `${(b / 1024 / 1024).toFixed(2)} MB`;
-}
-
-function fmtTime(seconds) {
-  if (seconds < 60) return `${Math.round(seconds)}s`;
-  const m = Math.floor(seconds / 60);
-  const s = Math.round(seconds % 60);
-  return `${m}m ${s}s`;
-}
-
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, c => ({
-    '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
-  }[c]));
-}
-
-
-// ════════════════════════════════════════════════════════════════════
-// QUICK ACTION MODE
-// ════════════════════════════════════════════════════════════════════
-async function initQuickAction() {
-  state.presets = await api.getPresets();
-  state.settings = await api.getSettings();
-  renderQuickPresetGrid();
-
-  document.getElementById('quickClose').addEventListener('click', () => api.closeWindow());
-  document.getElementById('quickCancel').addEventListener('click', () => api.closeWindow());
-  document.getElementById('quickManagePresets').addEventListener('click', () => api.openSettings());
-  document.getElementById('quickAdvanced').addEventListener('click', async () => {
-    // Fecha este modal e abre main com os arquivos
-    const files = state.files.map(f => f.path);
-    await api.openQuickAction([]); // placeholder
-    // Como main precisa dos arquivos via second-instance,
-    // mandamos via IPC alternativo:
-    document.dispatchEvent(new CustomEvent('quick-send-to-main'));
-  });
-  document.getElementById('quickQuality').addEventListener('input', (e) => {
-    document.getElementById('quickQualityValue').textContent = `${e.target.value}%`;
-  });
-
-  document.getElementById('quickSubmit').addEventListener('click', submitQuick);
-
-  api.onQuickActionSetFiles(async (files) => {
-    if (!files || files.length === 0) return;
-    await addFiles(files);
-    updateQuickSubtitle();
-    if (state.files[0]) {
-      document.getElementById('quickSamePath').textContent =
-        state.files[0].path.replace(/[\\/][^\\/]*$/, '');
+  $('#overwriteOriginal').addEventListener('change', e => {
+    STATE.overwriteOriginal = e.target.checked;
+    if (e.target.checked && !confirm('Sobrescrever os originais é irreversível. Continuar?')) {
+      e.target.checked = false;
+      STATE.overwriteOriginal = false;
     }
   });
-}
+  $('#saveRenamed').addEventListener('change', e => STATE.saveRenamed = e.target.checked);
 
-function updateQuickSubtitle() {
-  const n = state.files.length;
-  document.getElementById('quickSubtitle').textContent =
-    `${n} ${n === 1 ? 'arquivo selecionado' : 'arquivos selecionados'} do Explorer`;
-}
+  // Process
+  $('#processBtn').addEventListener('click', startProcessing);
 
-function renderQuickPresetGrid() {
-  const grid = document.getElementById('quickPresetGrid');
-  grid.innerHTML = '';
-  for (const p of state.presets) {
-    const btn = document.createElement('button');
-    btn.textContent = presetLabel(p);
-    btn.dataset.id = p.id;
-    btn.addEventListener('click', () => {
-      grid.querySelectorAll('button').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      state.selectedPresetId = p.id;
+  // Modals — close buttons
+  document.querySelectorAll('[data-close]').forEach(btn => {
+    btn.addEventListener('click', () => closeModal(btn.dataset.close));
+  });
+  // Backdrop click closes
+  document.querySelectorAll('.modal-backdrop').forEach(m => {
+    m.addEventListener('click', e => {
+      if (e.target === m) m.classList.add('hidden');
     });
-    grid.appendChild(btn);
-  }
-}
+  });
+  // ESC fecha qualquer modal aberto
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      $$('.modal-backdrop').forEach(m => m.classList.add('hidden'));
+    }
+  });
 
-async function submitQuick() {
-  if (state.files.length === 0) {
-    showToast('warn', 'Nenhum arquivo para processar.');
-    return;
-  }
-  const sel = state.presets.find(p => p.id === state.selectedPresetId);
-  const isPercent = sel && sel.type === 'percent';
+  // Preset manager
+  $('#savePresetBtn').addEventListener('click', () => {
+    const name = $('#newPresetName').value.trim();
+    const w = parseInt($('#newPresetW').value, 10);
+    const h = parseInt($('#newPresetH').value, 10);
+    const mode = $('#newPresetMode').value;
+    if (!name || (!w || !h)) {
+      alert('Preencha o nome e as dimensões.');
+      return;
+    }
+    STATE.customPresets.push({
+      id: 'c' + Date.now(),
+      label: name,
+      mode,
+      w: mode === 'pixels' ? w : null,
+      h: mode === 'pixels' ? h : null,
+      pct: mode === 'percent' ? w : null,
+      builtIn: false,
+    });
+    $('#newPresetName').value = '';
+    $('#newPresetW').value = '';
+    $('#newPresetH').value = '';
+    renderCustomPresetList();
+  });
+  $('#restoreDefaults').addEventListener('click', (e) => {
+    e.preventDefault();
+    if (confirm('Restaurar a lista de presets padrão? Seus presets customizados serão removidos.')) {
+      STATE.customPresets = [];
+      renderCustomPresetList();
+    }
+  });
 
-  const options = {
-    width: isPercent ? null : (sel?.width || null),
-    height: isPercent ? null : (sel?.height || null),
-    percent: isPercent ? sel.percent : null,
-    presetType: isPercent ? 'percent' : 'pixels',
-    keepRatio: document.getElementById('quickKeepRatio').checked,
-    upscale: false,
-    format: document.getElementById('quickFormat').value,
-    quality: parseInt(document.getElementById('quickQuality').value, 10),
-    outputDir: '',
-    overwriteOriginal: false,
-    namingMode: 'resized',
-    preserveFolderStructure: false,
-    maxParallel: state.settings?.threads > 0 ? state.settings.threads : 4,
-  };
+  // Quick action: format / quality
+  $('#qaFormat').addEventListener('change', e => STATE.format = e.target.value);
+  $('#qaQuality').addEventListener('input', e => {
+    STATE.quality = +e.target.value;
+    $('#qaQualityValue').textContent = STATE.quality + '%';
+    const pct = ((STATE.quality - 10) / 90) * 100;
+    e.target.style.backgroundSize = pct + '% 100%';
+  });
+  $('#qaQuality').style.backgroundSize = ((STATE.quality - 10) / 90) * 100 + '% 100%';
 
-  const destRadio = document.querySelector('input[name="quickDest"]:checked');
-  if (destRadio?.value === 'custom') {
-    const folder = await api.openFolderDialog();
-    if (folder) options.outputDir = folder;
-  }
+  // Quick action: destination cards
+  $('#qaDestSame').addEventListener('click', () => {
+    STATE.destination = 'same';
+    $('#qaDestSame').classList.add('selected');
+    $('#qaDestCustom').classList.remove('selected');
+  });
+  $('#qaDestCustom').addEventListener('click', () => {
+    STATE.destination = 'custom';
+    $('#qaDestCustom').classList.add('selected');
+    $('#qaDestSame').classList.remove('selected');
+  });
 
-  api.closeWindow();
+  $('#qaReduceBtn').addEventListener('click', () => {
+    closeModal('quickActionModal');
+    if (STATE.files.length === 0) {
+      // Demo: se não houver arquivos na fila, simula 3
+      loadDemoFiles();
+      renderQueue();
+      updateProcessBtn();
+      updateStatusbar();
+    }
+    startProcessing();
+  });
 
-  // Dispara processamento via main process — ele encaminha pro main window
-  // (que mostra o overlay de progresso automaticamente)
-  api.startProcessFromQuick({
-    jobId: `quick_${Date.now()}`,
-    files: state.files.map(f => ({ path: f.path })),
-    options,
-  }).catch(err => {
-    // Se main window estiver fechada, cai no próprio quick window
-    // (que já fechou, então erro é silencioso no user-facing)
-    console.error('Quick process error:', err);
+  // Hash routing
+  window.addEventListener('hashchange', route);
+
+  // Drag & drop no dropzone
+  const dz = $('#dropzone');
+  ['dragenter', 'dragover'].forEach(ev => dz.addEventListener(ev, e => {
+    e.preventDefault(); e.stopPropagation();
+    dz.classList.add('dropzone-active');
+  }));
+  ['dragleave', 'drop'].forEach(ev => dz.addEventListener(ev, e => {
+    e.preventDefault(); e.stopPropagation();
+    dz.classList.remove('dropzone-active');
+  }));
+  dz.addEventListener('drop', e => {
+    e.preventDefault();
+    const files = Array.from(e.dataTransfer?.files || []);
+    if (files.length === 0) return;
+    // se IPC estiver disponível, usar; senão, ignorar (demo)
+    if (api.handleDroppedFiles) api.handleDroppedFiles(files.map(f => f.path));
+    else console.log('arquivos arrastados:', files.map(f => f.name));
+  });
+
+  // Statusbar
+  $('#openOutputBtn').addEventListener('click', e => {
+    e.preventDefault();
+    if (api.openOutputFolder) api.openOutputFolder();
   });
 }
+
+/* =============================================================
+   12) Boot
+   ============================================================= */
+
+function boot() {
+  paintIcons();
+  loadDemoFiles();
+  renderQueue();
+  renderPresets();
+  updateProcessBtn();
+  updateStatusbar();
+  attachListeners();
+
+  // Auto-abre Quick Action se vier com hash específico
+  if (location.hash === '#/quick-action') openQuickAction();
+  // Detecta invocação via context menu (IPC do main process)
+  if (api.onQuickAction) {
+    api.onQuickAction((files) => {
+      STATE.files = files.map((f, i) => ({ ...f, id: 'q' + i, status: 'pending' }));
+      renderQueue();
+      updateProcessBtn();
+      updateStatusbar();
+      openQuickAction();
+    });
+  }
+  if (api.onFilesFromArgv) {
+    api.onFilesFromArgv((files) => {
+      STATE.files = files.map((f, i) => ({ ...f, id: 'a' + i, status: 'pending' }));
+      renderQueue();
+      updateProcessBtn();
+      updateStatusbar();
+    });
+  }
+}
+
+document.addEventListener('DOMContentLoaded', boot);
