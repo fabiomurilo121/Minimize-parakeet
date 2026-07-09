@@ -57,6 +57,15 @@
             </button>
           </div>
 
+          <!-- Indicacao persistente de drag & drop -->
+          <div class="drop-hint" id="dropHint">
+            <span class="drop-hint-icon" id="icoUploadCloud"></span>
+            <div class="drop-hint-text">
+              <strong>Arraste e solte imagens aqui</strong>
+              <span>ou clique em <b>Abrir Arquivos</b> no topo · JPG, PNG e WebP</span>
+            </div>
+          </div>
+
           <!-- Lista -->
           <div class="queue" id="queue">
             <div class="queue-head">
@@ -73,8 +82,23 @@
 
         </main>
 
-        <!-- Lado direito: presets + dimensões + qualidade + destino -->
+        <!-- Lado direito: action button no topo + presets + dimensões + qualidade + destino -->
         <aside class="side-panel">
+
+          <!-- BOTÃO PROCESSAR (no topo) -->
+          <div class="section">
+            <button class="btn btn-primary btn-block" id="processBtn" disabled>
+              <span id="icoMaximize"></span>
+              <span id="processBtnLabel">Processar 0 imagens</span>
+            </button>
+            <div class="output-hint" id="outputHint">
+              <span id="icoFolderSm"></span>
+              <span>Saída: <span id="outputHintPath">mesma pasta dos originais</span></span>
+            </div>
+            <div style="text-align: center; margin-top: var(--sp-3);">
+              <a href="#/settings" id="advancedLink">Preferências Avançadas...</a>
+            </div>
+          </div>
 
           <!-- PRESETS RÁPIDOS -->
           <div class="section">
@@ -98,10 +122,19 @@
                 <input class="input" type="number" id="heightInput" placeholder="1080" />
               </div>
             </div>
-            <label class="checkbox">
-              <input type="checkbox" id="keepAspect" checked />
-              Manter proporção original
-            </label>
+
+            <div class="field" style="margin-top: var(--sp-3);">
+              <label class="field-label" for="fitModeSelect">Modo de Ajuste</label>
+              <select class="select" id="fitModeSelect">
+                <option value="cover" selected>Preencher com recorte inteligente</option>
+                <option value="inside">Preservar todo o conteúdo</option>
+                <option value="fill">Esticar (pode distorcer)</option>
+              </select>
+              <p class="field-hint" id="fitModeHint">
+                <span id="icoInfoSm"></span>
+                <span id="fitModeHintText">Recorte central preserva áreas de interesse. Saída sempre 1920×1080.</span>
+              </p>
+            </div>
           </div>
 
           <!-- QUALIDADE E FORMATO -->
@@ -170,17 +203,6 @@
             </div>
           </div>
 
-          <!-- BOTÃO PROCESSAR -->
-          <div class="section">
-            <button class="btn btn-primary btn-block" id="processBtn" disabled>
-              <span id="icoMaximize"></span>
-              <span id="processBtnLabel">Processar 0 imagens</span>
-            </button>
-            <div style="text-align: center; margin-top: var(--sp-3);">
-              <a href="#/settings" id="advancedLink">Preferências Avançadas...</a>
-            </div>
-          </div>
-
         </aside>
       </div>
     </section>
@@ -192,10 +214,16 @@
       <main class="main-content" style="overflow: auto;">
         <div class="processing-header">
           <div>
-            <h1>Reduzindo suas imagens...</h1>
+            <h1 id="processingTitle">Reduzindo suas imagens...</h1>
             <p id="processingSubtitle">Processando item 1 de 0 arquivos selecionados.</p>
           </div>
-          <div class="processing-percent" id="processingPercent">0%</div>
+          <div class="processing-header-actions">
+            <button class="btn btn-secondary hidden" id="convertMoreBtn">
+              <span id="icoRefreshCw"></span>
+              Converter novos arquivos
+            </button>
+            <div class="processing-percent" id="processingPercent">0%</div>
+          </div>
         </div>
 
         <div class="progress-bar">
@@ -270,14 +298,15 @@
               </div>
               <div class="task-done-sub">O que deseja fazer agora?</div>
               <div class="task-done-actions">
-                <button class="btn btn-secondary">
+                <button class="btn btn-primary" id="openOutputFolderBtn">
                   <span id="icoExternal"></span>
                   Abrir pasta de saída
                 </button>
-                <button class="btn btn-secondary">
+                <button class="btn btn-secondary" id="openOutputFileBtn">
                   <span id="icoFileText"></span>
                   Ver relatório detalhado
                 </button>
+                <div class="output-final-path" id="outputFinalPath"></div>
               </div>
               <a href="#/" class="btn btn-secondary" style="margin-top: var(--sp-3);">
                 <span id="icoHome"></span>
@@ -339,10 +368,14 @@
             <a href="#" class="manage-link">Gerenciar</a>
           </div>
           <div class="preset-grid-3" id="qaPresetGrid"></div>
-          <label class="checkbox" style="margin-top: var(--sp-3);">
-            <input type="checkbox" id="qaKeepAspect" checked />
-            Manter proporção original
-          </label>
+          <div class="field" style="margin-top: var(--sp-3);">
+            <label class="field-label" for="qaFitModeSelect">Modo de Ajuste</label>
+            <select class="select" id="qaFitModeSelect">
+              <option value="cover" selected>Preencher com recorte inteligente</option>
+              <option value="inside">Preservar todo o conteúdo</option>
+              <option value="fill">Esticar (pode distorcer)</option>
+            </select>
+          </div>
         </div>
 
         <div class="modal-section">

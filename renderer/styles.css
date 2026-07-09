@@ -362,6 +362,23 @@ a:hover { text-decoration: underline; }
   pointer-events: none;
 }
 
+/* Hint inline abaixo de campos (e.g. explicacao do keepAspect) */
+.field-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 6px 0 0 0;
+  padding: 0;
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+.field-hint svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--text-subtle);
+}
+
 /* Checkbox */
 .checkbox {
   display: inline-flex;
@@ -688,6 +705,90 @@ a:hover { text-decoration: underline; }
   background: var(--primary-light);
 }
 
+/* Indicacao persistente de drag & drop na fila */
+.drop-hint {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  margin-bottom: var(--sp-4);
+  background: var(--primary-light);
+  border: 1.5px dashed var(--primary);
+  border-radius: var(--r-lg);
+  color: var(--text);
+  transition: background 150ms ease, border-color 150ms ease, transform 150ms ease;
+}
+.drop-hint-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--primary);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.drop-hint-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.4;
+  font-size: var(--fs-sm);
+}
+.drop-hint-text strong {
+  color: var(--text);
+  font-weight: 600;
+  font-size: var(--fs-md);
+}
+.drop-hint-text span {
+  color: var(--text-muted);
+}
+
+/* Quando arquivos estao carregados, deixa o hint mais sutil */
+.drop-hint.has-files {
+  background: var(--surface);
+  border-style: dashed;
+  border-color: var(--border-strong);
+}
+.drop-hint.has-files .drop-hint-icon {
+  background: var(--surface-alt);
+  color: var(--text-muted);
+}
+
+/* Borda tracejada permanente no estado vazio */
+.queue-empty-state {
+  position: relative;
+}
+.queue-empty-state::before {
+  content: "";
+  position: absolute;
+  inset: var(--sp-3);
+  border: 2px dashed var(--border-strong);
+  border-radius: var(--r-lg);
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+/* Animacao durante drag */
+@keyframes drop-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.02); }
+}
+.dropzone-active .drop-hint {
+  background: var(--primary);
+  border-color: var(--primary);
+  border-style: solid;
+  color: white;
+  animation: drop-pulse 1s ease infinite;
+}
+.dropzone-active .drop-hint-icon {
+  background: rgba(255,255,255,0.2);
+  color: white;
+}
+.dropzone-active .drop-hint-text strong,
+.dropzone-active .drop-hint-text span {
+  color: white;
+}
+
 /* ========================================
    Presets
    ======================================== */
@@ -854,6 +955,47 @@ a:hover { text-decoration: underline; }
   font-weight: 700;
   font-style: italic;
   color: var(--primary);
+}
+
+.processing-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+}
+
+/* Hint de saida abaixo do botao Processar */
+.output-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.4;
+}
+.output-hint #outputHintPath {
+  color: var(--text);
+  font-weight: 500;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+  vertical-align: bottom;
+}
+
+.output-final-path {
+  margin-top: var(--sp-2);
+  padding: var(--sp-3);
+  background: var(--surface-alt);
+  border-radius: var(--r-md);
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  word-break: break-all;
+  line-height: 1.4;
 }
 
 .progress-bar {
@@ -1295,7 +1437,11 @@ a:hover { text-decoration: underline; }
    ======================================== */
 
 .settings-container {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
   max-width: 720px;
+  width: 100%;
   margin: 0 auto;
   padding: var(--sp-8) var(--sp-6) var(--sp-12);
 }

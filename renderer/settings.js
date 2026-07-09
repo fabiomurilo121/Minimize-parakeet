@@ -1,5 +1,6 @@
 /* Redutor de Imagens - Settings renderer */
 const api = window.electronAPI || {};
+const HAS_IPC = !!api.getSettings;
 const $ = (s) => document.querySelector(s);
 
 const svg = (path, size = 20) => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`;
@@ -22,19 +23,10 @@ const I = {
 };
 
 const iconMap = {
-  brandLogo: 'activity',
-  icoArrowLeft: 'arrowLeft',
-  icoFolderOpen: 'folderOpen',
-  icoSettings: 'settings',
-  icoHelp: 'help',
-  icoSettingsBig: 'settings',
-  icoExternalLink: 'externalLink',
-  icoGrid: 'grid',
-  icoMonitor: 'monitor',
-  icoShield: 'shield',
-  icoZap: 'zap',
-  icoRefresh: 'refresh',
-  icoInfo: 'info',
+  brandLogo: 'activity', icoArrowLeft: 'arrowLeft', icoFolderOpen: 'folderOpen',
+  icoSettings: 'settings', icoHelp: 'help', icoSettingsBig: 'settings',
+  icoExternalLink: 'externalLink', icoGrid: 'grid', icoMonitor: 'monitor',
+  icoShield: 'shield', icoZap: 'zap', icoRefresh: 'refresh', icoInfo: 'info',
   icoSave: 'save',
 };
 
@@ -45,7 +37,72 @@ function paintIcons() {
   });
 }
 
-function init() {
+function collect() {
+  return {
+    contextMenu:     $('#ctxMenuToggle')?.checked ?? true,
+    desktopShortcut: $('#desktopShortcutToggle')?.checked ?? false,
+    runAsAdmin:      $('#adminToggle')?.checked ?? false,
+    threads:         parseInt($('#threadsSlider')?.value || '4', 10),
+    afterAction:     $('#afterActionSelect')?.value || 'open-output',
+    autoUpdate:      $('#autoUpdateToggle')?.checked ?? true,
+  };
+}
+
+function applySettings(s) {
+  if (!s) return;
+  if ($('#ctxMenuToggle'))         $('#ctxMenuToggle').checked         = !!s.contextMenu;
+  if ($('#desktopShortcutToggle')) $('#desktopShortcutToggle').checked = !!s.desktopShortcut;
+  if ($('#adminToggle'))           $('#adminToggle').checked           = !!s.runAsAdmin;
+  if ($('#threadsSlider'))         $('#threadsSlider').value           = s.threads ?? 4;
+  if ($('#threadsValue'))          $('#threadsValue').textContent      = s.threads ?? 4;
+  if ($('#afterActionSelect'))     $('#afterActionSelect').value       = s.afterAction || 'open-output';
+  if ($('#autoUpdateToggle'))      $('#autoUpdateToggle').checked      = !!s.autoUpdate;
+}
+
+let baselineSettings = null;
+
+function isDirty() {
+  if (!baselineSettings) return false;
+  const cur = collect();
+  return JSON.stringify(cur) !== JSON.stringify(baselineSettings);
+}
+
+function flashToast(msg, kind = 'info') {
+  const t = document.createElement('div');
+  t.textContent = msg;
+  const colors = { info: '#3B82F6', success: '#10B981', error: '#EF4444' };
+  Object.assign(t.style, {
+    position: 'fixed', bottom: '60px', right: '24px',
+    background: colors[kind] || colors.info, color: 'white',
+    padding: '10px 16px', borderRadius: '6px', fontSize: '13px', fontWeight: '500',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.15)', zIndex: '9999',
+    opacity: '0', transition: 'opacity 200ms ease',
+  });
+  document.body.appendChild(t);
+  requestAnimationFrame(() => { t.style.opacity = '1'; });
+  setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 220); }, 1800);
+}
+
+async function installContextMenu() {
+  if (!HAS_IPC || !api.installContextMenu) {
+    flashToast('Disponivel apenas no Electron.', 'error');
+    $('#ctxMenuToggle').checked = false;
+    return false;
+  }
+  const r = await api.installContextMenu();
+  if (r.ok) flashToast('Menu de contexto instalado.', 'success');
+  else { flashToast('Falha: ' + (r.error || ''), 'error'); $('#ctxMenuToggle').checked = false; }
+  return r.ok;
+}
+
+async function uninstallContextMenu() {
+  if (!HAS_IPC || !api.uninstallContextMenu) return;
+  const r = await api.uninstallContextMenu();
+  if (r.ok) flashToast('Menu de contexto removido.', 'info');
+  else flashToast('Falha: ' + (r.error || ''), 'error');
+}
+
+async function init() {
   paintIcons();
 
   // Slider live update
@@ -55,54 +112,53 @@ function init() {
     slider.addEventListener('input', () => { out.textContent = slider.value; });
   }
 
+  // Carrega settings
+  if (HAS_IPC && api.getSettings) {
+    try {
+      const s = await api.getSettings();
+      applySettings(s);
+      baselineSettings = s;
+    } catch (err) {
+      console.error('Erro ao carregar settings:', err);
+    }
+  }
+
   // Save
   $('#saveBtn')?.addEventListener('click', async () => {
     const data = collect();
-    if (api.saveSettings) await api.saveSettings(data);
-    flashToast('Configuracoes salvas');
+    if (HAS_IPC && api.saveSettings) {
+      await api.saveSettings(data);
+    }
+    baselineSettings = data;
+    flashToast('Configuracoes salvas', 'success');
   });
 
   // Discard
   $('#discardBtn')?.addEventListener('click', () => {
-    if (confirm('Descartar todas as alteracoes nao salvas?')) {
+    if (isDirty() && !confirm('Descartar alteracoes nao salvas?')) return;
+    window.location.href = 'index.html';
+  });
+
+  // Admin: confirmacao
+  $('#adminToggle')?.addEventListener('change', (e) => {
+    if (e.target.checked && !confirm('Executar como Administrador pode exigir reinstalacao. Continuar?')) {
+      e.target.checked = false;
+    }
+  });
+
+  // Context menu: instala/desinstala no registry
+  $('#ctxMenuToggle')?.addEventListener('change', async (e) => {
+    if (e.target.checked) await installContextMenu();
+    else await uninstallContextMenu();
+  });
+
+  // Abrir arquivos (header)
+  $('#openFilesBtn')?.addEventListener('click', async () => {
+    if (HAS_IPC && api.openFilesDialog) {
+      // Redireciona pra main e manda processar depois
       window.location.href = 'index.html';
     }
   });
-
-  // Confirmacoes potencialmente perigosas
-  $('#adminToggle')?.addEventListener('change', (e) => {
-    if (e.target.checked) {
-      if (!confirm('Executar como Administrador pode exigir reinstalacao. Continuar?')) {
-        e.target.checked = false;
-      }
-    }
-  });
-}
-
-function collect() {
-  return {
-    contextMenu:       $('#ctxMenuToggle')?.checked ?? true,
-    desktopShortcut:   $('#desktopShortcutToggle')?.checked ?? false,
-    runAsAdmin:        $('#adminToggle')?.checked ?? false,
-    threads:           parseInt($('#threadsSlider')?.value || '4', 10),
-    afterAction:       $('#afterActionSelect')?.value || 'open-output',
-    autoUpdate:        $('#autoUpdateToggle')?.checked ?? true,
-  };
-}
-
-function flashToast(msg) {
-  const t = document.createElement('div');
-  t.textContent = msg;
-  Object.assign(t.style, {
-    position: 'fixed', bottom: '60px', right: '24px',
-    background: '#10B981', color: 'white', padding: '10px 16px',
-    borderRadius: '6px', fontSize: '13px', fontWeight: '500',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.15)', zIndex: '999',
-    opacity: '0', transition: 'opacity 200ms ease',
-  });
-  document.body.appendChild(t);
-  requestAnimationFrame(() => { t.style.opacity = '1'; });
-  setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 220); }, 1800);
 }
 
 document.addEventListener('DOMContentLoaded', init);

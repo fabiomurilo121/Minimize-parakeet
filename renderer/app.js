@@ -1,12 +1,11 @@
-/* =============================================================
-   Redutor de Imagens — Renderer (index.html)
-   Lógica: roteamento por hash + fila + presets + processamento
-   ============================================================= */
+/* Redutor de Imagens - Renderer (index.html)
+   Logica completa: fila + presets + processamento real via IPC + modais. */
 
 const api = window.electronAPI || {};
+const HAS_IPC = !!api.openFilesDialog;
 
 /* =============================================================
-   1) Catálogo de ícones (Lucide-like inline SVG)
+   1) Icones (inline SVG)
    ============================================================= */
 
 const ICONS = {
@@ -19,12 +18,10 @@ const ICONS = {
   clock: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
   crop: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.13 1L6 16a2 2 0 0 0 2 2h15"/><path d="M1 6.13L16 6a2 2 0 0 1 2 2v15"/></svg>',
   external: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>',
-  externalLink: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>',
   fileText: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>',
   folder: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>',
-  folderOpen: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M5 8l4 8h12l-4-8z" fill="currentColor" opacity=".15"/></svg>',
+  folderOpen: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>',
   folderPlus: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>',
-  grid: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>',
   help: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
   helpCircle: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
   home: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
@@ -32,23 +29,22 @@ const ICONS = {
   info: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
   lock: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
   maximize: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>',
-  monitor: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>',
   play: '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>',
   plus: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
-  refresh: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>',
+  refreshCw: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>',
   rotate: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>',
-  save: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>',
-  settings: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
-  shield: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+  folderSm: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>',
+  infoSm: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
+  settings: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
   sliders: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>',
   trash: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>',
+  uploadCloud: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>',
   x: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
   zap: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
 };
 
-const $ = (sel) => document.querySelector(sel);
-const $$ = (sel) => Array.from(document.querySelectorAll(sel));
-
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => Array.from(document.querySelectorAll(s));
 function setIcon(id, key) {
   const el = document.getElementById(id);
   if (el) el.innerHTML = ICONS[key] || '';
@@ -56,159 +52,213 @@ function setIcon(id, key) {
 
 function paintIcons() {
   const map = {
-    brandLogo: 'activity',
-    icoArrowLeft: 'arrowLeft',
-    icoFolderOpen: 'folderOpen',
-    icoSettings: 'settings',
-    icoHelp: 'help',
-    icoTrash: 'trash',
-    icoLock: 'lock',
-    icoFolder: 'folder',
-    icoMaximize: 'maximize',
-    icoArchive: 'archive',
-    icoZap: 'zap',
-    icoClock: 'clock',
-    icoBarChart: 'barChart',
-    icoCheck: 'check',
-    icoExternal: 'external',
-    icoFileText: 'fileText',
-    icoHome: 'home',
-    icoInfo: 'info',
-    icoCrop: 'crop',
-    icoX: 'x',
-    icoSliders: 'sliders',
-    icoCheckCircle: 'checkCircle',
-    icoFolder2: 'folder',
-    icoFolderPlus: 'folderPlus',
-    icoPlay: 'play',
-    icoPlus: 'plus',
-    icoX2: 'x',
-    icoX3: 'x',
-    icoCheck2: 'check',
-    icoRotate: 'rotate',
-    icoX4: 'x',
-    icoHelpCircle: 'helpCircle',
-    icoSettingsBig: 'settings',
-    icoGrid: 'grid',
-    icoMonitor: 'monitor',
-    icoShield: 'shield',
-    icoExternalLink: 'externalLink',
-    icoRefresh: 'refresh',
-    icoSave: 'save',
+    brandLogo: 'activity', icoArrowLeft: 'arrowLeft', icoFolderOpen: 'folderOpen',
+    icoSettings: 'settings', icoHelp: 'help', icoTrash: 'trash', icoLock: 'lock',
+    icoFolder: 'folder', icoMaximize: 'maximize', icoArchive: 'archive',
+    icoZap: 'zap', icoClock: 'clock', icoBarChart: 'barChart', icoCheck: 'check',
+    icoExternal: 'external', icoFileText: 'fileText', icoHome: 'home', icoInfo: 'info',
+    icoCrop: 'crop', icoX: 'x', icoSliders: 'sliders', icoCheckCircle: 'checkCircle',
+    icoFolder2: 'folder', icoFolderPlus: 'folderPlus', icoPlay: 'play',
+    icoPlus: 'plus', icoX2: 'x', icoX3: 'x', icoCheck2: 'check', icoRotate: 'rotate',
+    icoX4: 'x', icoHelpCircle: 'helpCircle',
+    icoRefreshCw: 'refreshCw', icoFolderSm: 'folderSm',
+  icoUploadCloud: 'uploadCloud', icoInfoSm: 'infoSm',
   };
   for (const [id, key] of Object.entries(map)) setIcon(id, key);
 }
 
 /* =============================================================
-   2) Estado (em memória — substituir por IPC depois)
+   2) Estado
    ============================================================= */
 
 const STATE = {
-  files: [],                 // { id, name, ext, width, height, size, status, thumbnail, processed?, savedBytes? }
-  presetActive: null,        // id do preset selecionado
-  presets: [
-    { id: 'hd',       label: 'HD (1920×1080)',         mode: 'pixels', w: 1920, h: 1080, builtIn: true },
-    { id: 'sd',       label: 'SD (1280×720)',          mode: 'pixels', w: 1280, h: 720,  builtIn: true },
-    { id: 'tablet',   label: 'Tablet (1024×768)',      mode: 'pixels', w: 1024, h: 768,  builtIn: true },
-    { id: 'web',      label: 'Web (800×600)',          mode: 'pixels', w: 800,  h: 600,  builtIn: true },
-    { id: 'thumb',    label: 'Thumbnail (400×300)',    mode: 'pixels', w: 400,  h: 300,  builtIn: true },
-    { id: 'half',     label: 'Reduzir 50%',            mode: 'percent', pct: 50,        builtIn: true },
-    { id: 'qtr',      label: 'Reduzir 75%',            mode: 'percent', pct: 75,        builtIn: true },
+  files: [],
+  lastOutputDir: null,
+  lastResults: [],
+  builtInPresets: [
+    { id: 'hd',     label: 'HD (1920x1080)',      mode: 'pixels',  w: 1920, h: 1080, builtIn: true },
+    { id: 'sd',     label: 'SD (1280x720)',       mode: 'pixels',  w: 1280, h: 720,  builtIn: true },
+    { id: 'tablet', label: 'Tablet (1024x768)',   mode: 'pixels',  w: 1024, h: 768,  builtIn: true },
+    { id: 'web',    label: 'Web (800x600)',       mode: 'pixels',  w: 800,  h: 600,  builtIn: true },
+    { id: 'thumb',  label: 'Thumbnail (400x300)', mode: 'pixels',  w: 400,  h: 300,  builtIn: true },
+    { id: 'half',   label: 'Reduzir 50%',         mode: 'percent', percent: 50,         builtIn: true },
+    { id: 'qtr',    label: 'Reduzir 75%',         mode: 'percent', percent: 75,         builtIn: true },
   ],
-  customPresets: [],         // presets adicionados pelo usuário
+  customPresets: [],
+  presetActive: null,
   format: 'jpeg',
   quality: 85,
-  keepAspect: true,
+  fitMode: 'cover', // 'inside' | 'cover' | 'fill'
+  allowEnlarge: false,
   width: '',
   height: '',
-  lockAspect: true,
-  destination: 'same',       // 'same' | 'custom'
+  destination: 'same',
   customDestPath: '',
   overwriteOriginal: false,
   saveRenamed: true,
   selectedPresetForQA: 'sd',
+  currentPresetMode: 'pixels', // 'pixels' | 'percent'
+  currentPresetPercent: 100,
 };
 
 /* =============================================================
-   3) Demo data (substituir por arquivos reais via IPC)
-   ============================================================= */
-
-function loadDemoFiles() {
-  const demo = [
-    { name: 'ferias_verao_2024.jpg',         ext: 'jpg',  w: 4032, h: 3024, size: 4.2 * 1024 * 1024 },
-    { name: 'projeto_final_render.png',      ext: 'png',  w: 1920, h: 1080, size: 12.5 * 1024 * 1024 },
-    { name: 'documento_escaneado.jpeg',      ext: 'jpeg', w: 2480, h: 3508, size: 1.8 * 1024 * 1024 },
-    { name: 'foto_perfil_v2.webp',           ext: 'webp', w: 1000, h: 1000, size: 450 * 1024 },
-    { name: 'paisagem_montanha.jpg',         ext: 'jpg',  w: 6000, h: 4000, size: 18.2 * 1024 * 1024 },
-    { name: 'logo_empresa_vetor.png',        ext: 'png',  w: 512,  h: 512,  size: 85 * 1024 },
-    { name: 'casamento_ana_bruno.jpg',       ext: 'jpg',  w: 3000, h: 2000, size: 5.6 * 1024 * 1024 },
-    { name: 'screenshot_desktop.png',        ext: 'png',  w: 1440, h: 900,  size: 1.2 * 1024 * 1024 },
-  ];
-  STATE.files = demo.map((f, i) => ({
-    id: `f${i + 1}`,
-    ...f,
-    status: 'pending',
-    thumbnail: `https://picsum.photos/seed/${i + 1}/96/96`,
-  }));
-}
-
-/* =============================================================
-   4) Helpers
+   3) Helpers
    ============================================================= */
 
 function formatBytes(bytes) {
+  if (!bytes) return '0 B';
   if (bytes >= 1024 * 1024) return (bytes / 1024 / 1024).toFixed(1) + ' MB';
   if (bytes >= 1024) return (bytes / 1024).toFixed(0) + ' KB';
   return bytes + ' B';
 }
-
-function formatTime(secs) {
-  secs = Math.max(0, Math.round(secs));
-  const m = Math.floor(secs / 60).toString().padStart(2, '0');
-  const s = (secs % 60).toString().padStart(2, '0');
-  return `${m}:${s}`;
+function formatTime(s) {
+  s = Math.max(0, Math.round(s));
+  return `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
 }
+function totalSize() { return STATE.files.reduce((a, f) => a + (f.size || 0), 0); }
 
-function totalSelectionSize() {
-  return STATE.files.reduce((acc, f) => acc + f.size, 0);
+function showToast(msg, kind = 'info') {
+  const t = document.createElement('div');
+  t.textContent = msg;
+  const colors = { info: '#3B82F6', success: '#10B981', error: '#EF4444' };
+  Object.assign(t.style, {
+    position: 'fixed', bottom: '52px', right: '24px',
+    background: colors[kind] || colors.info, color: 'white',
+    padding: '10px 16px', borderRadius: '6px', fontSize: '13px', fontWeight: '500',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.15)', zIndex: '9999',
+    opacity: '0', transition: 'opacity 200ms ease', maxWidth: '360px',
+  });
+  document.body.appendChild(t);
+  requestAnimationFrame(() => { t.style.opacity = '1'; });
+  setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 220); }, 2400);
 }
 
 function updateStatusbar() {
-  const count = STATE.files.length;
-  const size = totalSelectionSize();
+  const n = STATE.files.length;
+  const size = totalSize();
   $('#statusbarSelection').textContent =
-    `${count} ${count === 1 ? 'imagem selecionada' : 'imagens selecionadas'} (${formatBytes(size)})`;
+    `${n} ${n === 1 ? 'imagem selecionada' : 'imagens selecionadas'} (${formatBytes(size)})`;
+}
+
+function getCurrentOutputDir() {
+  if (STATE.destination === 'custom' && STATE.customDestPath) {
+    return STATE.customDestPath;
+  }
+  if (STATE.files.length > 0 && STATE.files[0].path) {
+    const sep = STATE.files[0].path.includes('\\') ? '\\' : '/';
+    const parts = STATE.files[0].path.split(/[\\/]/);
+    parts.pop();
+    return parts.join(sep);
+  }
+  return null;
+}
+
+function shortenPath(p, max = 50) {
+  if (!p) return '';
+  if (p.length <= max) return p;
+  const sep = p.includes('\\') ? '\\' : '/';
+  const parts = p.split(/[\\/]/);
+  if (parts.length <= 3) return p;
+  return parts[0] + sep + '...' + sep + parts.slice(-2).join(sep);
+}
+
+function updateOutputHint() {
+  const el = $('#outputHintPath');
+  if (!el) return;
+  const dir = getCurrentOutputDir();
+  if (dir) {
+    el.textContent = shortenPath(dir);
+    el.title = dir;
+  } else {
+    el.textContent = 'mesma pasta dos originais';
+    el.title = '';
+  }
+
+  // Sincroniza tambem o card "Pasta Atual" no destino
+  const cardEl = $('#destSamePath');
+  if (cardEl) {
+    if (STATE.destination === 'custom' && STATE.customDestPath) {
+      cardEl.textContent = shortenPath(STATE.customDestPath, 38);
+      cardEl.title = STATE.customDestPath;
+      const title = cardEl.parentElement?.querySelector('.dest-card-title');
+      if (title) title.textContent = 'Pasta Personalizada';
+    } else if (dir) {
+      cardEl.textContent = shortenPath(dir, 38);
+      cardEl.title = dir;
+      const title = cardEl.parentElement?.querySelector('.dest-card-title');
+      if (title) title.textContent = 'Pasta Atual';
+    } else {
+      cardEl.textContent = 'A mesma pasta dos arquivos originais';
+      cardEl.removeAttribute('title');
+      const title = cardEl.parentElement?.querySelector('.dest-card-title');
+      if (title) title.textContent = 'Pasta Atual';
+    }
+  }
 }
 
 /* =============================================================
-   5) Render: Fila
+   4) Adicionar arquivos
+   ============================================================= */
+
+function addFiles(newFiles) {
+  if (!Array.isArray(newFiles) || newFiles.length === 0) return;
+  for (const f of newFiles) {
+    if (STATE.files.some(x => x.path && x.path === f.path)) continue; // dedupe
+    STATE.files.push({
+      id: f.id || ('f' + Date.now() + '_' + Math.random().toString(36).slice(2, 6)),
+      name: f.name || 'arquivo',
+      ext: f.ext || '',
+      path: f.path || null,
+      w: f.w || f.width || 0,
+      h: f.h || f.height || 0,
+      size: f.size || 0,
+      status: 'pending',
+    });
+  }
+  renderQueue();
+  updateProcessBtn();
+  updateStatusbar();
+  updateOutputHint();
+}
+
+function clearFiles() {
+  STATE.files = [];
+  renderQueue();
+  updateProcessBtn();
+  updateStatusbar();
+  updateOutputHint();
+}
+
+/* =============================================================
+   5) Render da fila
    ============================================================= */
 
 function renderQueue() {
   const body = $('#queueBody');
+  const hint = $('#dropHint');
   body.innerHTML = '';
-
   if (STATE.files.length === 0) {
     body.innerHTML = `
-      <div class="empty">
-        <div class="empty-icon">${ICONS.image}</div>
-        <h3>Nenhuma imagem adicionada</h3>
-        <p>Arraste arquivos aqui ou clique em <b>Abrir Arquivos</b>.</p>
+      <div class="empty queue-empty-state">
+        <div class="empty-icon">${ICONS.uploadCloud}</div>
+        <h3>Solte suas imagens aqui</h3>
+        <p>Arraste arquivos JPG, PNG ou WebP para começar<br>ou clique em <b>Abrir Arquivos</b> no topo.</p>
       </div>`;
+    if (hint) hint.classList.remove('has-files');
     return;
   }
-
   for (const f of STATE.files) {
     const row = document.createElement('div');
     row.className = 'queue-row';
+    const dim = (f.w && f.h) ? `${f.w}x${f.h}` : '—';
     row.innerHTML = `
-      <div class="queue-thumb" style="background-image: url('${f.thumbnail}')"></div>
+      <div class="queue-thumb"></div>
       <div class="queue-name">
-        <span class="filename">${f.name}</span>
-        <span class="ext">${f.ext}</span>
+        <span class="filename" title="${f.name}">${f.name}</span>
+        <span class="ext">${f.ext || 'IMG'}</span>
       </div>
       <div class="queue-dim">
-        <span>${f.w}×${f.h}</span>
+        <span>${dim}</span>
         <small>Original</small>
       </div>
       <div>${formatBytes(f.size)}</div>
@@ -216,26 +266,24 @@ function renderQueue() {
     `;
     body.appendChild(row);
   }
+  if (hint) hint.classList.add('has-files');
 }
 
 /* =============================================================
-   6) Render: Presets
+   6) Render dos presets
    ============================================================= */
 
 function renderPresets() {
   const grid = $('#presetGrid');
   grid.innerHTML = '';
-
-  for (const p of STATE.presets) {
+  for (const p of STATE.builtInPresets) {
     const btn = document.createElement('button');
     btn.className = 'preset-btn' + (STATE.presetActive === p.id ? ' active' : '');
     btn.textContent = p.label;
     btn.dataset.presetId = p.id;
-    btn.addEventListener('click', () => selectPreset(p.id));
+    btn.addEventListener('click', () => selectPreset(p));
     grid.appendChild(btn);
   }
-
-  // Manage button
   const manage = document.createElement('button');
   manage.className = 'preset-btn manage';
   manage.textContent = 'Gerenciar Presets...';
@@ -246,7 +294,7 @@ function renderPresets() {
 function renderQAPresets() {
   const grid = $('#qaPresetGrid');
   grid.innerHTML = '';
-  const all = [...STATE.presets, ...STATE.customPresets].slice(0, 6);
+  const all = [...STATE.builtInPresets, ...STATE.customPresets].slice(0, 6);
   for (const p of all) {
     const btn = document.createElement('button');
     btn.className = 'preset-btn' + (STATE.selectedPresetForQA === p.id ? ' active' : '');
@@ -263,84 +311,92 @@ function renderQAPresets() {
 function renderCustomPresetList() {
   const list = $('#customPresetList');
   list.innerHTML = '';
-
   if (STATE.customPresets.length === 0) {
-    list.innerHTML = `<p class="text-muted" style="text-align:center; padding: var(--sp-4);">Você ainda não criou presets customizados.</p>`;
+    list.innerHTML = `<p class="text-muted" style="text-align:center; padding: var(--sp-4);">Voce ainda nao criou presets customizados.</p>`;
     return;
   }
-
   for (const p of STATE.customPresets) {
     const item = document.createElement('div');
     item.className = 'preset-list-item';
     item.innerHTML = `
       <div>
-        <div class="name">${p.label} <span class="badge badge-fixed">Fixo</span></div>
+        <div class="name">${escapeHtml(p.label)} <span class="badge badge-fixed">Fixo</span></div>
         <div class="meta">
-          <span>${ICONS.maximize} ${p.mode === 'pixels' ? `${p.w} × ${p.h}` : p.pct + '%'}</span>
-          <span>${ICONS.check} Manter Proporção</span>
+          <span>${ICONS.maximize} ${p.mode === 'pixels' ? `${p.w} x ${p.h}` : p.percent + '%'}</span>
+          <span>${ICONS.check} Manter Proporcao</span>
         </div>
       </div>
       <div class="actions">
-        <button class="btn-icon" title="Editar">${ICONS.settings}</button>
-        <button class="btn-icon" title="Remover">${ICONS.trash}</button>
+        <button class="btn-icon" data-edit="${p.id}" title="Editar">${ICONS.settings}</button>
+        <button class="btn-icon" data-remove="${p.id}" title="Remover">${ICONS.trash}</button>
       </div>
     `;
     list.appendChild(item);
   }
+  list.querySelectorAll('[data-remove]').forEach(b => {
+    b.addEventListener('click', () => {
+      const id = b.dataset.remove;
+      STATE.customPresets = STATE.customPresets.filter(p => p.id !== id);
+      persistPresets();
+      renderCustomPresetList();
+    });
+  });
 }
 
-function selectPreset(id) {
-  STATE.presetActive = id;
-  const p = STATE.presets.find(x => x.id === id);
-  if (p) {
-    if (p.mode === 'pixels') {
-      $('#widthInput').value = p.w;
-      $('#heightInput').value = p.h;
-    } else if (p.mode === 'percent') {
-      // deixa em branco — a lógica de processamento calcula a partir do original
-      $('#widthInput').value = '';
-      $('#heightInput').value = '';
-    }
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
+function selectPreset(p) {
+  STATE.presetActive = p.id;
+  STATE.currentPresetMode = p.mode;
+  if (p.mode === 'pixels') {
+    STATE.width = p.w;
+    STATE.height = p.h;
+    $('#widthInput').value = p.w;
+    $('#heightInput').value = p.h;
+  } else if (p.mode === 'percent') {
+    STATE.currentPresetPercent = p.percent;
+    STATE.width = '';
+    STATE.height = '';
+    $('#widthInput').value = '';
+    $('#heightInput').value = '';
   }
   renderPresets();
-  updateProcessBtn();
 }
 
 /* =============================================================
-   7) Render: Processamento (lista + métricas + logs)
+   7) Render da view de processamento
    ============================================================= */
 
 function renderProcessList() {
   const list = $('#processList');
   list.innerHTML = '';
-  STATE.files.forEach((f, idx) => {
+  STATE.files.forEach((f) => {
     const item = document.createElement('div');
     item.className = 'process-item';
-    const status = f.status;
     let statusHtml = '';
-    if (status === 'pending') {
-      statusHtml = `
-        <span class="label">Aguardando</span>
+    if (f.status === 'pending') {
+      statusHtml = `<span class="label">Aguardando</span>
         <div class="process-item-progress"><div style="width: 0%"></div></div>`;
-    } else if (status === 'processing') {
-      const pct = f.progress || 0;
-      statusHtml = `
-        <span class="label">Processando...</span>
-        <div class="process-item-progress"><div style="width: ${pct}%"></div></div>
-        <span class="pct">${pct}%</span>`;
-    } else if (status === 'done') {
+    } else if (f.status === 'processing') {
+      statusHtml = `<span class="label">Processando...</span>
+        <div class="process-item-progress"><div style="width: 100%"></div></div>`;
+    } else if (f.status === 'done') {
       const pct = f.savedPct || 0;
-      statusHtml = `
-        <span class="label">Concluído</span>
+      statusHtml = `<span class="label">Concluido</span>
         <div class="process-item-progress complete"><div style="width: 100%"></div></div>
-        <span class="badge-percent">−${pct}%</span>`;
-    } else if (status === 'error') {
-      statusHtml = `<span class="label text-muted">Erro</span>`;
+        <span class="badge-percent">-${pct}%</span>`;
+    } else if (f.status === 'error') {
+      statusHtml = `<span class="badge badge-error">Erro</span>
+        <small class="text-muted" style="font-size: var(--fs-xs);">${f.error || ''}</small>`;
     }
     item.innerHTML = `
       <div class="process-item-icon">${ICONS.image}</div>
       <div class="process-item-body">
-        <div class="process-item-name">${f.name}</div>
+        <div class="process-item-name">${escapeHtml(f.name)}</div>
         <div class="process-item-size">${formatBytes(f.size)}</div>
       </div>
       <div class="process-item-status">${statusHtml}</div>
@@ -351,16 +407,17 @@ function renderProcessList() {
 
 function pushLog(msg, isCurrent = false) {
   const stream = $('#logStream');
+  if (!stream) return;
   const line = document.createElement('div');
   line.className = 'log-line' + (isCurrent ? ' cur' : '');
   const ts = new Date().toLocaleTimeString('pt-BR', { hour12: false });
-  line.innerHTML = `<span class="ts">[${ts}]</span> ${msg}`;
+  line.innerHTML = `<span class="ts">[${ts}]</span> ${escapeHtml(msg)}`;
   stream.appendChild(line);
   stream.scrollTop = stream.scrollHeight;
 }
 
 /* =============================================================
-   8) Processar (simulação)
+   8) Botao de processar
    ============================================================= */
 
 function updateProcessBtn() {
@@ -371,226 +428,428 @@ function updateProcessBtn() {
   lbl.textContent = `Processar ${n} ${n === 1 ? 'imagem' : 'imagens'}`;
 }
 
-async function startProcessing() {
-  if (STATE.files.length === 0) return;
-  // Switch view
-  location.hash = '#/processing';
+/* =============================================================
+   9) Processamento (real via IPC OU demo)
+   ============================================================= */
 
+function buildProcessOptions() {
+  const opt = {
+    format: STATE.format,
+    quality: STATE.quality,
+    fitMode: STATE.fitMode,
+    allowEnlarge: STATE.allowEnlarge,
+    overwriteOriginal: STATE.overwriteOriginal,
+    saveRenamed: STATE.saveRenamed,
+    destination: STATE.destination,
+    customDestPath: STATE.customDestPath,
+  };
+  if (STATE.currentPresetMode === 'percent') {
+    opt.mode = 'percent';
+    opt.percent = STATE.currentPresetPercent;
+  } else {
+    opt.mode = 'pixels';
+    opt.width = STATE.width || '';
+    opt.height = STATE.height || '';
+  }
+  return opt;
+}
+
+function updateFitModeHint() {
+  const el = $('#fitModeHintText');
+  if (!el) return;
+  const w = STATE.width || '?';
+  const h = STATE.height || '?';
+  const messages = {
+    cover: `Recorte central preserva áreas de interesse. Saída sempre ${w}×${h}.`,
+    inside: `Sem cortes — saída pode ser menor que ${w}×${h} se a proporção original for diferente.`,
+    fill: `Estica para preencher exatamente ${w}×${h}. Pode distorcer.`,
+  };
+  el.textContent = messages[STATE.fitMode] || '';
+}
+
+async function startProcessing() {
+  if (STATE.files.length === 0) {
+    showToast('Adicione imagens antes de processar.', 'error');
+    return;
+  }
+  // Reseta estados
+  STATE.files.forEach(f => { f.status = 'pending'; f.error = null; f.savedPct = null; f.outputPath = null; });
+  STATE.lastOutputDir = null;
+  STATE.lastResults = [];
   const n = STATE.files.length;
-  $('#processingSubtitle').textContent = `Processando item 1 de ${n} arquivos selecionados.`;
+  location.hash = '#/processing';
+  if (!location.hash.endsWith('/processing')) location.hash = '#/processing';
+  $('#processingTitle').textContent = 'Reduzindo suas imagens...';
+  $('#processingSubtitle').textContent = `Processando 0 de ${n} arquivos selecionados.`;
   $('#processingCounter').textContent = `0/${n}`;
-  $('#metricSaved').textContent = '0 MB';
+  $('#globalProgress').style.width = '0%';
+  $('#processingPercent').textContent = '0%';
+  $('#metricSaved').textContent = '0 B';
   $('#metricSpeed').textContent = '0 img/s';
   $('#metricEta').textContent = '00:00';
   $('#metricRate').textContent = '0%';
-  $('#globalProgress').style.width = '0%';
-  $('#processingPercent').textContent = '0%';
   $('#taskDone').classList.add('hidden');
+  $('#convertMoreBtn').classList.add('hidden');
+  $('#outputFinalPath').textContent = '';
   $('#logStream').innerHTML = '';
+  renderProcessList();
 
-  pushLog('Iniciando motor de compressão MozJPEG...', true);
-
-  let done = 0;
-  let totalSaved = 0;
-  let totalOriginal = STATE.files.reduce((acc, f) => acc + f.size, 0);
+  const options = buildProcessOptions();
   const startTime = Date.now();
+  pushLog('Iniciando motor de compressao...', true);
 
-  for (let i = 0; i < n; i++) {
-    const f = STATE.files[i];
-    f.status = 'processing';
-    f.progress = 0;
+  if (HAS_IPC && api.processBatch) {
+    // REAL
+    let totalSaved = 0;
+    const totalOriginal = STATE.files.reduce((a, f) => a + (f.size || 0), 0);
+
+    // Marca todos como processing imediatamente
+    STATE.files.forEach(f => f.status = 'processing');
     renderProcessList();
-    pushLog(`${f.name}: Otimização iniciada.`, true);
 
-    // Simula progresso em steps
-    for (let p = 0; p <= 100; p += 20) {
-      f.progress = Math.min(p, 100);
-      renderProcessList();
-      await sleep(120);
+    if (api.onProcessProgress) {
+      api.onProcessProgress((p) => {
+        const f = STATE.files.find(x => x.id === p.file.id);
+        if (!f) return;
+        if (p.result.status === 'done') {
+          f.status = 'done';
+          f.savedPct = p.result.originalSize
+            ? Math.round((p.result.savedBytes / p.result.originalSize) * 100)
+            : 0;
+          f.outputPath = p.result.outputPath;
+          f.outputDir = p.result.outputDir;
+          f.outputSize = p.result.outputSize;
+          if (p.result.outputDir && !STATE.lastOutputDir) {
+            STATE.lastOutputDir = p.result.outputDir;
+          }
+          totalSaved += (p.result.savedBytes || 0);
+          STATE.lastResults.push(p.result);
+          pushLog(`${f.name}: concluido -> ${p.result.outputPath}`);
+        } else {
+          f.status = 'error';
+          f.error = p.result.error;
+          pushLog(`${f.name}: ERRO - ${p.result.error}`, false);
+          STATE.lastResults.push(p.result);
+        }
+        renderProcessList();
+        const pct = Math.round((p.processed / p.total) * 100);
+        $('#globalProgress').style.width = pct + '%';
+        $('#processingPercent').textContent = pct + '%';
+        $('#processingCounter').textContent = `${p.processed}/${p.total}`;
+        $('#processingSubtitle').textContent = `Processando ${p.processed} de ${p.total} arquivos.`;
+        $('#metricSaved').textContent = formatBytes(totalSaved);
+        $('#metricSpeed').textContent = `${p.speed.toFixed(1)} img/s`;
+        $('#metricEta').textContent = formatTime(p.eta);
+        $('#metricRate').textContent = totalOriginal
+          ? `${Math.round((totalSaved / totalOriginal) * 100)}%`
+          : '0%';
+      });
     }
 
-    // Simula compressão
-    const saved = f.size * (0.3 + Math.random() * 0.5);
-    f.status = 'done';
-    f.savedPct = Math.round((saved / f.size) * 100);
-    f.processedSize = f.size - saved;
-    totalSaved += saved;
-    done++;
-    renderProcessList();
-    pushLog(`${f.name}: Redimensionado com sucesso. (−${f.savedPct}%)`);
-    $('#processingCounter').textContent = `${done}/${n}`;
-    const pct = Math.round((done / n) * 100);
-    $('#globalProgress').style.width = pct + '%';
-    $('#processingPercent').textContent = pct + '%';
-    $('#processingSubtitle').textContent = `Processando item ${Math.min(i + 2, n)} de ${n} arquivos selecionados.`;
-
-    // métricas
-    const elapsed = (Date.now() - startTime) / 1000;
-    const speed = (done / elapsed).toFixed(1);
-    const eta = (n - done) * (elapsed / done);
-    $('#metricSaved').textContent = formatBytes(totalSaved);
-    $('#metricSpeed').textContent = `${speed} img/s`;
-    $('#metricEta').textContent = formatTime(eta);
-    $('#metricRate').textContent = `${Math.round((totalSaved / totalOriginal) * 100)}%`;
+    try {
+      const r = await api.processBatch({ files: STATE.files, options });
+      if (!r || !r.ok) {
+        pushLog('Falha no processamento: ' + (r?.error || 'desconhecida'));
+        showToast('Erro ao processar: ' + (r?.error || 'desconhecido'), 'error');
+      } else {
+        pushLog('Tarefa concluida.', true);
+      }
+    } catch (err) {
+      pushLog('Erro: ' + err.message);
+      showToast('Erro: ' + err.message, 'error');
+    }
+  } else {
+    // DEMO (sem Electron)
+    let totalSaved = 0;
+    const totalOriginal = STATE.files.reduce((a, f) => a + f.size, 0);
+    for (let i = 0; i < n; i++) {
+      const f = STATE.files[i];
+      f.status = 'processing';
+      renderProcessList();
+      pushLog(`${f.name}: otimizando...`, true);
+      await sleep(400);
+      const saved = f.size * (0.3 + Math.random() * 0.5);
+      f.status = 'done';
+      f.savedPct = Math.round((saved / f.size) * 100);
+      f.outputSize = f.size - saved;
+      totalSaved += saved;
+      STATE.lastResults.push({ status: 'done', originalSize: f.size, savedBytes: saved });
+      renderProcessList();
+      pushLog(`${f.name}: concluido (-${f.savedPct}%)`);
+      const processed = i + 1;
+      const pct = Math.round((processed / n) * 100);
+      $('#globalProgress').style.width = pct + '%';
+      $('#processingPercent').textContent = pct + '%';
+      $('#processingCounter').textContent = `${processed}/${n}`;
+      $('#processingSubtitle').textContent = `Processando ${Math.min(i + 2, n)} de ${n} arquivos.`;
+      const elapsed = (Date.now() - startTime) / 1000;
+      $('#metricSaved').textContent = formatBytes(totalSaved);
+      $('#metricSpeed').textContent = `${(processed / elapsed).toFixed(1)} img/s`;
+      $('#metricEta').textContent = formatTime((n - processed) * (elapsed / processed));
+      $('#metricRate').textContent = `${Math.round((totalSaved / totalOriginal) * 100)}%`;
+    }
+    pushLog('Tarefa concluida (demo).', true);
   }
 
-  pushLog('Tarefa concluída.', true);
+  // UI pos-conclusao
   $('#taskDone').classList.remove('hidden');
+  $('#convertMoreBtn').classList.remove('hidden');
+  $('#processingTitle').textContent = 'Conversao concluida!';
+
+  const okCount = STATE.files.filter(f => f.status === 'done').length;
+  const errCount = STATE.files.filter(f => f.status === 'error').length;
+  const totalBytes = STATE.lastResults
+    .filter(r => r.status === 'done')
+    .reduce((acc, r) => acc + (r.savedBytes || 0), 0);
+
+  showToast(`Concluido: ${okCount} processados, ${errCount} erros, ${formatBytes(totalBytes)} economizados.`,
+    errCount > 0 ? 'info' : 'success');
+
+  if (STATE.lastOutputDir) {
+    $('#outputFinalPath').textContent = `Pasta de saida: ${STATE.lastOutputDir}`;
+  } else if (STATE.destination === 'custom' && STATE.customDestPath) {
+    $('#outputFinalPath').textContent = `Pasta de saida: ${STATE.customDestPath}`;
+  } else {
+    $('#outputFinalPath').textContent = 'Pasta de saida: mesma pasta dos originais';
+  }
 }
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 /* =============================================================
-   9) Modal helpers
+   10) Modais
    ============================================================= */
 
 function openModal(id) {
-  const m = document.getElementById(id);
-  if (m) m.classList.remove('hidden');
+  const m = document.getElementById(id)
+          || document.getElementById(id + 'Modal')
+          || document.querySelector(`[data-modal="${id}"]`);
+  m?.classList.remove('hidden');
 }
 function closeModal(id) {
-  const m = document.getElementById(id);
-  if (m) m.classList.add('hidden');
+  const m = document.getElementById(id)
+          || document.getElementById(id + 'Modal')
+          || document.querySelector(`[data-modal="${id}"]`);
+  m?.classList.add('hidden');
 }
-
 function openPresetManager() { renderCustomPresetList(); openModal('presetManagerModal'); }
-function openQuickAction()   { renderQAPresets(); openModal('quickActionModal'); }
-function openHelp()          { openModal('helpModal'); }
+function openQuickAction() { renderQAPresets(); openModal('quickActionModal'); }
+function openHelp() { openModal('helpModal'); }
 
 /* =============================================================
-   10) Hash routing
+   11) Persistencia de presets
    ============================================================= */
 
-function route() {
-  const hash = location.hash || '#/';
-  const main = $('#view-main');
-  const proc = $('#view-processing');
-  const back = $('#backLink');
+async function persistPresets() {
+  if (HAS_IPC && api.savePresets) {
+    await api.savePresets({ builtIn: STATE.builtInPresets, custom: STATE.customPresets });
+  }
+}
 
-  if (hash.startsWith('#/processing')) {
-    main.classList.remove('active');
-    proc.classList.add('active');
-    back.classList.remove('hidden');
-  } else if (hash.startsWith('#/settings')) {
-    window.location.href = 'settings.html';
-    return;
-  } else if (hash.startsWith('#/quick-action')) {
-    openQuickAction();
-    // não muda a view principal
-  } else {
-    main.classList.add('active');
-    proc.classList.remove('active');
-    back.classList.add('hidden');
+async function loadPresets() {
+  if (HAS_IPC && api.getPresets) {
+    const data = await api.getPresets();
+    if (data?.custom?.length) STATE.customPresets = data.custom;
+    if (data?.builtIn?.length) STATE.builtInPresets = data.builtIn;
   }
 }
 
 /* =============================================================
-   11) Listeners
+   12) Hash routing
+   ============================================================= */
+
+function showView(name) {
+  $$('.view').forEach(v => v.classList.remove('active'));
+  const v = $('#view-' + name);
+  if (v) v.classList.add('active');
+  const back = $('#backLink');
+  if (back) back.classList.toggle('hidden', name === 'main');
+}
+
+function route() {
+  const hash = location.hash || '#/';
+  if (hash.startsWith('#/processing')) showView('processing');
+  else if (hash.startsWith('#/quick-action')) { showView('main'); openQuickAction(); }
+  else if (hash.startsWith('#/settings')) { window.location.href = 'settings.html'; }
+  else showView('main');
+}
+
+/* =============================================================
+   13) Listeners
    ============================================================= */
 
 function attachListeners() {
-  // Brand / back
-  $('#backLink').addEventListener('click', (e) => {
+  // Brand / back link
+  $('#backLink')?.addEventListener('click', (e) => {
     e.preventDefault();
     location.hash = '#/';
   });
 
-  // Topbar
-  $('#openFilesBtn').addEventListener('click', () => {
-    if (api.openFilesDialog) api.openFilesDialog();
-    else alert('IPC openFilesDialog não conectado (demo).');
+  // Open files
+  $('#openFilesBtn').addEventListener('click', async () => {
+    if (HAS_IPC) {
+      try {
+        const files = await api.openFilesDialog();
+        addFiles(files);
+      } catch (err) {
+        showToast('Erro ao abrir dialogo: ' + err.message, 'error');
+      }
+    } else {
+      showToast('Modo demo: use o console ou o botao Limpar Lista.', 'info');
+    }
   });
-  $('#settingsBtn').addEventListener('click', () => { location.href = 'settings.html'; });
+
+  // Settings / Help
+  $('#settingsBtn').addEventListener('click', () => { window.location.href = 'settings.html'; });
   $('#helpBtn').addEventListener('click', openHelp);
 
   // Clear list
   $('#clearBtn').addEventListener('click', () => {
-    STATE.files = [];
-    renderQueue();
-    updateProcessBtn();
-    updateStatusbar();
+    if (STATE.files.length === 0) return;
+    if (confirm('Limpar todas as imagens da fila?')) clearFiles();
   });
 
-  // Width/height inputs
-  $('#widthInput').addEventListener('input', () => {
-    STATE.width = $('#widthInput').value;
+  // Width / Height / Lock
+  $('#widthInput').addEventListener('input', (e) => {
+    STATE.width = e.target.value;
     STATE.presetActive = null;
+    STATE.currentPresetMode = 'pixels';
     renderPresets();
   });
-  $('#heightInput').addEventListener('input', () => {
-    STATE.height = $('#heightInput').value;
+  $('#heightInput').addEventListener('input', (e) => {
+    STATE.height = e.target.value;
     STATE.presetActive = null;
+    STATE.currentPresetMode = 'pixels';
     renderPresets();
   });
-  $('#keepAspect').addEventListener('change', e => STATE.keepAspect = e.target.checked);
+  $('#fitModeSelect').addEventListener('change', (e) => {
+    STATE.fitMode = e.target.value;
+    updateFitModeHint();
+  });
+  updateFitModeHint();
+
+  // Mantem o botao de "cadeado" por compatibilidade: alterna entre cover <-> inside
   $('#lockAspectBtn').addEventListener('click', () => {
-    STATE.lockAspect = !STATE.lockAspect;
-    $('#lockAspectBtn').style.color = STATE.lockAspect ? 'var(--primary)' : 'var(--text-muted)';
+    STATE.fitMode = STATE.fitMode === 'cover' ? 'inside' : 'cover';
+    const sel = $('#fitModeSelect');
+    if (sel) sel.value = STATE.fitMode;
+    updateFitModeHint();
+    $('#lockAspectBtn').style.color = STATE.fitMode === 'cover' ? 'var(--primary)' : 'var(--text-muted)';
   });
 
   // Format & quality
-  $('#formatSelect').addEventListener('change', e => {
+  $('#formatSelect').addEventListener('change', (e) => {
     STATE.format = e.target.value;
     const rec = { jpeg: 'JPEG', png: 'PNG', webp: 'WebP', jpg: 'JPG' }[e.target.value];
     $('#formatRecommended').textContent = `Recomendado: ${rec}`;
   });
-  $('#qualitySlider').addEventListener('input', e => {
-    STATE.quality = +e.target.value;
+  const qSlider = $('#qualitySlider');
+  const syncQuality = () => {
+    STATE.quality = +qSlider.value;
     $('#qualityValue').textContent = STATE.quality + '%';
-    const pct = ((STATE.quality - 10) / 90) * 100;
-    e.target.style.backgroundSize = pct + '% 100%';
+    qSlider.style.backgroundSize = ((STATE.quality - 10) / 90) * 100 + '% 100%';
+  };
+  qSlider.addEventListener('input', syncQuality);
+  qSlider.style.backgroundSize = ((STATE.quality - 10) / 90) * 100 + '% 100%';
+
+  // Destination - clicar no card "Pasta Atual" reverte para "mesma pasta dos originais"
+  $('#destSameFolder').addEventListener('click', (e) => {
+    // Ignora se o clique foi no botao "Alterar"
+    if (e.target.closest('#changeDestBtn')) return;
+    STATE.destination = 'same';
+    STATE.customDestPath = '';
+    updateOutputHint();
   });
-  // init slider fill
-  const initSlider = $('#qualitySlider');
-  initSlider.style.backgroundSize = ((STATE.quality - 10) / 90) * 100 + '% 100%';
 
   // Destination
-  $('#changeDestBtn').addEventListener('click', () => {
-    if (api.pickFolder) api.pickFolder().then(p => {
+  $('#changeDestBtn').addEventListener('click', async () => {
+    if (HAS_IPC && api.pickFolder) {
+      const startDir = getCurrentOutputDir();
+      const p = await api.pickFolder(startDir);
       if (p) {
         STATE.destination = 'custom';
         STATE.customDestPath = p;
-        $('#destSamePath').textContent = p;
+        updateOutputHint();
       }
-    });
-  });
-  $('#overwriteOriginal').addEventListener('change', e => {
-    STATE.overwriteOriginal = e.target.checked;
-    if (e.target.checked && !confirm('Sobrescrever os originais é irreversível. Continuar?')) {
-      e.target.checked = false;
-      STATE.overwriteOriginal = false;
+    } else {
+      showToast('Selecao de pasta disponivel apenas no Electron.', 'info');
     }
   });
-  $('#saveRenamed').addEventListener('change', e => STATE.saveRenamed = e.target.checked);
+  $('#overwriteOriginal').addEventListener('change', (e) => {
+    if (e.target.checked && !confirm('Sobrescrever os originais e IRREVERSIVEL. Continuar?')) {
+      e.target.checked = false;
+      return;
+    }
+    STATE.overwriteOriginal = e.target.checked;
+  });
+  $('#saveRenamed').addEventListener('change', (e) => { STATE.saveRenamed = e.target.checked; });
 
   // Process
   $('#processBtn').addEventListener('click', startProcessing);
 
-  // Modals — close buttons
-  document.querySelectorAll('[data-close]').forEach(btn => {
-    btn.addEventListener('click', () => closeModal(btn.dataset.close));
-  });
-  // Backdrop click closes
-  document.querySelectorAll('.modal-backdrop').forEach(m => {
-    m.addEventListener('click', e => {
-      if (e.target === m) m.classList.add('hidden');
-    });
-  });
-  // ESC fecha qualquer modal aberto
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') {
-      $$('.modal-backdrop').forEach(m => m.classList.add('hidden'));
+  // Converter novos arquivos (apos conclusao)
+  $('#convertMoreBtn').addEventListener('click', async () => {
+    clearFiles();
+    location.hash = '#/';
+    if (HAS_IPC && api.openFilesDialog) {
+      const files = await api.openFilesDialog();
+      addFiles(files);
     }
   });
 
+  // Abrir pasta de saida (apos conclusao)
+  $('#openOutputFolderBtn').addEventListener('click', async () => {
+    const target = STATE.lastOutputDir
+      || STATE.customDestPath
+      || (STATE.files[0]?.path ? STATE.files[0].path.replace(/[\\/][^\\/]+$/, '') : null);
+    if (!target) {
+      showToast('Caminho de saida nao disponivel.', 'error');
+      return;
+    }
+    if (HAS_IPC && api.openFolder) {
+      await api.openFolder(target);
+    } else {
+      showToast('Disponivel apenas no Electron.', 'info');
+    }
+  });
+
+  // Ver relatorio (mostra caminho dos arquivos gerados)
+  $('#openOutputFileBtn').addEventListener('click', () => {
+    if (STATE.lastResults.length === 0) {
+      showToast('Nenhum resultado para mostrar.', 'info');
+      return;
+    }
+    const lines = STATE.lastResults.map(r => {
+      if (r.status === 'done') {
+        const pct = r.originalSize ? Math.round((r.savedBytes / r.originalSize) * 100) : 0;
+        return `[OK] ${r.outputPath}  (${formatBytes(r.originalSize)} -> ${formatBytes(r.outputSize)}, -${pct}%)`;
+      }
+      return `[ERRO] ${r.error || 'desconhecido'}`;
+    });
+    pushLog('--- Relatorio ---');
+    lines.forEach(l => pushLog(l));
+    showToast('Relatorio exibido nos logs.', 'info');
+  });
+
+  // Modal close
+  document.querySelectorAll('[data-close]').forEach(btn => {
+    btn.addEventListener('click', () => closeModal(btn.dataset.close));
+  });
+  document.querySelectorAll('.modal-backdrop').forEach(m => {
+    m.addEventListener('click', (e) => { if (e.target === m) m.classList.add('hidden'); });
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') $$('.modal-backdrop').forEach(m => m.classList.add('hidden'));
+  });
+
   // Preset manager
-  $('#savePresetBtn').addEventListener('click', () => {
+  $('#savePresetBtn').addEventListener('click', async () => {
     const name = $('#newPresetName').value.trim();
     const w = parseInt($('#newPresetW').value, 10);
     const h = parseInt($('#newPresetH').value, 10);
     const mode = $('#newPresetMode').value;
-    if (!name || (!w || !h)) {
-      alert('Preencha o nome e as dimensões.');
+    if (!name || (!w && mode === 'pixels')) {
+      showToast('Preencha o nome e as dimensoes.', 'error');
       return;
     }
     STATE.customPresets.push({
@@ -599,52 +858,70 @@ function attachListeners() {
       mode,
       w: mode === 'pixels' ? w : null,
       h: mode === 'pixels' ? h : null,
-      pct: mode === 'percent' ? w : null,
+      percent: mode === 'percent' ? w : null,
       builtIn: false,
     });
     $('#newPresetName').value = '';
     $('#newPresetW').value = '';
     $('#newPresetH').value = '';
     renderCustomPresetList();
+    await persistPresets();
+    showToast('Preset salvo!', 'success');
   });
-  $('#restoreDefaults').addEventListener('click', (e) => {
+  $('#restoreDefaults').addEventListener('click', async (e) => {
     e.preventDefault();
-    if (confirm('Restaurar a lista de presets padrão? Seus presets customizados serão removidos.')) {
+    if (confirm('Restaurar a lista de presets? Seus customizados serao removidos.')) {
       STATE.customPresets = [];
       renderCustomPresetList();
+      await persistPresets();
     }
   });
 
-  // Quick action: format / quality
-  $('#qaFormat').addEventListener('change', e => STATE.format = e.target.value);
-  $('#qaQuality').addEventListener('input', e => {
-    STATE.quality = +e.target.value;
+  // Quick action
+  $('#qaFormat').addEventListener('change', (e) => { STATE.format = e.target.value; });
+  const qaQ = $('#qaQuality');
+  const syncQaQuality = () => {
+    STATE.quality = +qaQ.value;
     $('#qaQualityValue').textContent = STATE.quality + '%';
-    const pct = ((STATE.quality - 10) / 90) * 100;
-    e.target.style.backgroundSize = pct + '% 100%';
-  });
-  $('#qaQuality').style.backgroundSize = ((STATE.quality - 10) / 90) * 100 + '% 100%';
+    qaQ.style.backgroundSize = ((STATE.quality - 10) / 90) * 100 + '% 100%';
+  };
+  qaQ.addEventListener('input', syncQaQuality);
+  qaQ.style.backgroundSize = ((STATE.quality - 10) / 90) * 100 + '% 100%';
+  $('#qaFitModeSelect').addEventListener('change', (e) => { STATE.fitMode = e.target.value; });
 
-  // Quick action: destination cards
   $('#qaDestSame').addEventListener('click', () => {
     STATE.destination = 'same';
     $('#qaDestSame').classList.add('selected');
     $('#qaDestCustom').classList.remove('selected');
   });
-  $('#qaDestCustom').addEventListener('click', () => {
-    STATE.destination = 'custom';
-    $('#qaDestCustom').classList.add('selected');
-    $('#qaDestSame').classList.remove('selected');
+  $('#qaDestCustom').addEventListener('click', async () => {
+    if (HAS_IPC && api.pickFolder) {
+      const startDir = getCurrentOutputDir();
+      const p = await api.pickFolder(startDir);
+      if (p) {
+        STATE.destination = 'custom';
+        STATE.customDestPath = p;
+        $('#qaDestSame').classList.remove('selected');
+        $('#qaDestCustom').classList.add('selected');
+        updateOutputHint();
+      }
+    } else {
+      showToast('Selecao disponivel apenas no Electron.', 'info');
+    }
   });
 
-  $('#qaReduceBtn').addEventListener('click', () => {
+  $('#qaReduceBtn').addEventListener('click', async () => {
     closeModal('quickActionModal');
+    if (STATE.files.length === 0 && HAS_IPC) {
+      // Tenta abrir dialogo se nao tem arquivos
+      try {
+        const files = await api.openFilesDialog();
+        addFiles(files);
+      } catch {}
+    }
     if (STATE.files.length === 0) {
-      // Demo: se não houver arquivos na fila, simula 3
-      loadDemoFiles();
-      renderQueue();
-      updateProcessBtn();
-      updateStatusbar();
+      showToast('Adicione imagens antes de reduzir.', 'error');
+      return;
     }
     startProcessing();
   });
@@ -652,65 +929,90 @@ function attachListeners() {
   // Hash routing
   window.addEventListener('hashchange', route);
 
-  // Drag & drop no dropzone
+  // Drag & drop
   const dz = $('#dropzone');
-  ['dragenter', 'dragover'].forEach(ev => dz.addEventListener(ev, e => {
+  ['dragenter', 'dragover'].forEach(ev => dz.addEventListener(ev, (e) => {
     e.preventDefault(); e.stopPropagation();
     dz.classList.add('dropzone-active');
   }));
-  ['dragleave', 'drop'].forEach(ev => dz.addEventListener(ev, e => {
+  ['dragleave', 'drop'].forEach(ev => dz.addEventListener(ev, (e) => {
     e.preventDefault(); e.stopPropagation();
     dz.classList.remove('dropzone-active');
   }));
-  dz.addEventListener('drop', e => {
+  dz.addEventListener('drop', async (e) => {
     e.preventDefault();
-    const files = Array.from(e.dataTransfer?.files || []);
-    if (files.length === 0) return;
-    // se IPC estiver disponível, usar; senão, ignorar (demo)
-    if (api.handleDroppedFiles) api.handleDroppedFiles(files.map(f => f.path));
-    else console.log('arquivos arrastados:', files.map(f => f.name));
+    const fileList = Array.from(e.dataTransfer?.files || []);
+    if (fileList.length === 0) return;
+    if (HAS_IPC) {
+      // Obtem paths reais via webUtils
+      const paths = fileList.map(f => api.getDroppedPath ? api.getDroppedPath(f) : f.path).filter(Boolean);
+      if (paths.length === 0) {
+        showToast('Nao foi possivel obter o caminho dos arquivos.', 'error');
+        return;
+      }
+      try {
+        const files = await api.filesFromPaths(paths);
+        addFiles(files);
+        showToast(`${files.length} arquivo(s) adicionado(s).`, 'success');
+      } catch (err) {
+        showToast('Erro: ' + err.message, 'error');
+      }
+    } else {
+      showToast('Drag & drop requer Electron. Use o botao Abrir Arquivos.', 'info');
+    }
   });
 
   // Statusbar
-  $('#openOutputBtn').addEventListener('click', e => {
+  $('#openOutputBtn').addEventListener('click', async (e) => {
     e.preventDefault();
-    if (api.openOutputFolder) api.openOutputFolder();
+    if (HAS_IPC && api.openFolder) {
+      const target = STATE.customDestPath || null;
+      await api.openFolder(target);
+    } else {
+      showToast('Disponivel apenas no Electron.', 'info');
+    }
   });
 }
 
 /* =============================================================
-   12) Boot
+   14) Boot
    ============================================================= */
 
-function boot() {
-  paintIcons();
-  loadDemoFiles();
-  renderQueue();
-  renderPresets();
-  updateProcessBtn();
-  updateStatusbar();
-  attachListeners();
+async function boot() {
+  try { paintIcons(); }
+  catch (err) { console.error('[paintIcons]', err); }
 
-  // Auto-abre Quick Action se vier com hash específico
+  try { await loadPresets(); }
+  catch (err) { console.error('[loadPresets]', err); }
+
+  try {
+    renderQueue();
+    renderPresets();
+    updateProcessBtn();
+    updateStatusbar();
+    updateOutputHint();
+  } catch (err) {
+    console.error('[initial render]', err);
+  }
+
+  try { attachListeners(); }
+  catch (err) { console.error('[attachListeners]', err); }
+
+  // Auto abre Quick Action se veio via hash
   if (location.hash === '#/quick-action') openQuickAction();
-  // Detecta invocação via context menu (IPC do main process)
-  if (api.onQuickAction) {
-    api.onQuickAction((files) => {
-      STATE.files = files.map((f, i) => ({ ...f, id: 'q' + i, status: 'pending' }));
-      renderQueue();
-      updateProcessBtn();
-      updateStatusbar();
-      openQuickAction();
-    });
-  }
-  if (api.onFilesFromArgv) {
+
+  // Arquivos vindos do argv (segunda instancia)
+  if (HAS_IPC && api.onFilesFromArgv) {
     api.onFilesFromArgv((files) => {
-      STATE.files = files.map((f, i) => ({ ...f, id: 'a' + i, status: 'pending' }));
-      renderQueue();
-      updateProcessBtn();
-      updateStatusbar();
+      addFiles(files);
+      showToast(`${files.length} arquivo(s) recebido(s) do Explorer.`, 'success');
     });
   }
+
+  // Aplica visual inicial do botao processar
+  updateProcessBtn();
+
+  console.log('[Redutor] Boot OK. HAS_IPC =', HAS_IPC);
 }
 
 document.addEventListener('DOMContentLoaded', boot);
